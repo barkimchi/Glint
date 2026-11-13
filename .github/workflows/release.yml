@@ -65,7 +65,9 @@ jobs:
           APP=build/Build/Products/Release/Glint.app
           # Capture before grepping: grep -q in a pipeline can SIGPIPE codesign
           # and pipefail then reports a spurious failure.
-          INFO="$(codesign -dv "$APP" 2>&1)"
+          INFO="$(codesign -dv --verbose=4 "$APP" 2>&1)"
+          printf '%s
+' "$INFO"
           ENT="$(codesign -d --entitlements - --xml "$APP" 2>/dev/null || true)"
           if grep -q get-task-allow <<<"$ENT"; then
             echo "::error::Release build must not carry the get-task-allow entitlement"
