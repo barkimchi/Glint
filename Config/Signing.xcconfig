@@ -1,0 +1,9 @@
+// Default signing: ad hoc, so anyone can build without an Apple developer account.
+// To sign with your own certificate, create Config/Local.xcconfig (it is gitignored) with:
+//   CODE_SIGN_IDENTITY = <certificate name or SHA-1>
+//   DEVELOPMENT_TEAM = <team id>
+// A stable certificate keeps the Screen Recording grant across rebuilds.
+CODE_SIGN_STYLE = Manual
+CODE_SIGN_IDENTITY = -
+DEVELOPMENT_TEAM =
+#include? "Local.xcconfig"

@@ -1,0 +1,36 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Glint icon options</title>
+<style>
+  body { margin: 0; padding: 48px; background: #fff; color: #121212; font: 15px/1.45 -apple-system, sans-serif; }
+  h1 { font-size: 28px; margin: 0 0 32px; letter-spacing: -0.02em; }
+  .row { display: flex; gap: 40px; flex-wrap: wrap; }
+  .opt { width: 250px; }
+  .opt svg.big { width: 250px; height: 250px; display: block; }
+  .sizes { display: flex; gap: 14px; align-items: flex-end; margin: 14px 0 12px; padding: 10px; background: #e9e9ec; border-radius: 10px; }
+  .sizes.dark { background: #1d1d20; }
+  h2 { font-size: 18px; margin: 0 0 4px; }
+  p { margin: 0; color: #444; }
+</style>
+<svg width="0" height="0" style="position:absolute">
+  <symbol id="a" viewBox="0 0 1024 1024"><rect x="100" y="100" width="824" height="824" rx="186" fill="#121212"/><path d="M512 250 C538 426 598 486 774 512 C598 538 538 598 512 774 C486 598 426 538 250 512 C426 486 486 426 512 250 Z" fill="#F4F2EE"/><circle cx="716" cy="308" r="40" fill="#E0311F"/></symbol>
+  <symbol id="b" viewBox="0 0 1024 1024"><rect x="100" y="100" width="824" height="824" rx="186" fill="#F4F2EE"/><path d="M300 410 V300 H410 M614 300 H724 V410 M724 614 V724 H614 M410 724 H300 V614" stroke="#121212" stroke-width="52" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M512 404 C523 478 546 501 620 512 C546 523 523 546 512 620 C501 546 478 523 404 512 C478 501 501 478 512 404 Z" fill="#E0311F"/></symbol>
+  <symbol id="c" viewBox="0 0 1024 1024"><rect x="100" y="100" width="824" height="824" rx="186" fill="#E0311F"/><circle cx="512" cy="512" r="240" fill="#121212"/><circle cx="512" cy="512" r="150" fill="none" stroke="#2c2c2c" stroke-width="22"/><path d="M440 372 C446 416 460 430 504 436 C460 442 446 456 440 500 C434 456 420 442 376 436 C420 430 434 416 440 372 Z" fill="#fff"/></symbol>
+  <symbol id="d" viewBox="0 0 1024 1024"><rect x="100" y="100" width="824" height="824" rx="186" fill="#121212"/><path d="M690 356 A225 225 0 1 0 737 512 H540" stroke="#F4F2EE" stroke-width="66" fill="none" stroke-linecap="round"/><path d="M732 248 C739 298 752 311 802 318 C752 325 739 338 732 388 C725 338 712 325 662 318 C712 311 725 298 732 248 Z" fill="#E0311F"/></symbol>
+</svg>
+<h1>Glint icon options</h1>
+<div class="row" id="row"></div>
+<script>
+  const opts = [
+    ["a", "A · Spark", "A four-point glint on black with a red safelight dot. Simplest, and the clearest at 16px."],
+    ["b", "B · Crop", "Selection corners framing a red glint. Says \"capture\" outright, on a light tile."],
+    ["c", "C · Lens", "A lens catching a glint on a full red tile. The loudest one in the Dock."],
+    ["d", "D · Monogram", "A single-stroke G with a red glint where the stroke ends. Most brand-like, least literal."],
+  ];
+  const use = (id, s, cls = "") => `<svg class="${cls}" width="${s}" height="${s}"><use href="#${id}"/></svg>`;
+  document.getElementById("row").innerHTML = opts.map(([id, t, d]) => `
+    <div class="opt">${use(id, 250, "big")}
+      <div class="sizes">${[64, 32, 16].map(s => use(id, s)).join("")}</div>
+      <div class="sizes dark">${[64, 32, 16].map(s => use(id, s)).join("")}</div>
+      <h2>${t}</h2><p>${d}</p></div>`).join("");
+</script>
