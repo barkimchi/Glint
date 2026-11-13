@@ -5,5 +5,17 @@
     <link>https://github.com/barkimchi/glint-app</link>
     <description>Glint release feed</description>
     <language>en</language>
+    <item>
+      <title>Glint 0.1.2</title>
+      <link>https://github.com/barkimchi/glint-app/releases/tag/v0.1.2</link>
+      <sparkle:version>2</sparkle:version>
+      <sparkle:shortVersionString>0.1.2</sparkle:shortVersionString>
+      <sparkle:releaseNotesLink>https://github.com/barkimchi/glint-app/releases/tag/v0.1.2</sparkle:releaseNotesLink>
+      <pubDate>Fri, 13 Nov 2026 20:43:12 +0000</pubDate>
+      <enclosure url="https://github.com/barkimchi/glint-app/releases/download/v0.1.2/Glint.zip"
+                 sparkle:edSignature="cE31Zuuj2qUFXGgZ8FyJccNUvZSzKZYLLpiS9wZhXmIbFbSBF66KeT14C5kZGCY+qtRuoZkAqpAE6RgZevKyDA=="
+                 length="1376552"
+                 type="application/octet-stream" />
+    </item>
   </channel>
 </rss>

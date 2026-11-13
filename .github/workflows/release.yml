@@ -28,8 +28,11 @@ jobs:
         env:
           SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
         run: |
+          set -o pipefail
           curl -sL https://github.com/sparkle-project/Sparkle/releases/download/2.10.1/Sparkle-2.10.1.tar.xz | tar xJ
-          echo "$SPARKLE_PRIVATE_KEY" | ./Sparkle-2.10.1/bin/sign_update --ed-key-file - build/Glint.zip | tr -d '\n' > sig.txt
+          SIGN=$(find . -name sign_update -type f | head -1)
+          echo "$SPARKLE_PRIVATE_KEY" | "$SIGN" --ed-key-file - build/Glint.zip | tr -d '\n' > sig.txt
+          test -s sig.txt
       - name: Publish release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -39,6 +42,8 @@ jobs:
           python3 .github/update_appcast.py "${{ github.ref_name }}" "$(cat sig.txt)" "$(date -u '+%a, %d %b %Y %H:%M:%S +0000')"
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          git fetch origin master
+          git checkout -B appcast-publish origin/master
           git add appcast.xml
           git commit -m "Appcast entry for ${{ github.ref_name }}"
-          git push
+          git push origin HEAD:master
