@@ -279,11 +279,11 @@ struct SettingsView: View {
                 Button("Choose…") { chooseFolder() }
             }
             HStack {
-                Text("Save, and Save in the editor, put files here. History is kept separately for 30 days.")
+                Text("Every new screenshot lands here automatically. History is kept separately for 30 days.")
                     .font(.callout).foregroundStyle(.secondary)
                 Spacer()
                 if saveDir != Store.defaultSaveDir {
-                    Button("Use Desktop") {
+                    Button("Use Default") {
                         UserDefaults.standard.removeObject(forKey: Store.saveFolderKey)
                         saveDir = Store.savedDir
                     }

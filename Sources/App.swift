@@ -247,6 +247,8 @@ final class AppController: NSObject, NSMenuDelegate {
 
     private func deliver(_ img: CGImage) {
         guard let url = Store.savePNG(img) else { Toast.show("Could not save capture"); return }
+        // Every screenshot also lands in the save folder right away.
+        if Store.exportCopy(url) == nil { Toast.show("Could not save a copy to your save folder") }
         QuickAccess.show(url: url, isVideo: false)
     }
 

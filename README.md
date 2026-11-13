@@ -78,15 +78,15 @@ Arrows, boxes, ellipses, lines, free draw, text, text blocks, highlight, pixelat
 
 ### Quick access thumbnail
 
-Each capture shows up as a thumbnail in the bottom-left corner. Drag it into any app, double-click to open it, or use Copy, Save, Annotate and Pin. Videos get Copy, Save, GIF and Show in Finder.
+Every screenshot is saved straight to your save folder (Desktop/Glint Screenshots by default) and shows up as a thumbnail in the bottom-left corner. Drag it into any app, double-click to open it, or hover for Copy, Save, Annotate and Pin. Videos get Copy, Save, GIF and Show in Finder. Thumbnails dismiss themselves after 30 seconds unless you pin them; hovering pauses the countdown.
 
 ### Pins
 
-Pin a screenshot and it floats above every window. Drag to move, scroll to fade, right-click for Copy, Annotate, opacity and Lock (click-through). Double-click or Esc closes it.
+Pin a screenshot and it floats above every window, docked under the edge widget. It follows the widget wherever you park it. Drag a pin to move it by hand, scroll to fade, right-click for Copy, Annotate, opacity and Lock (click-through). Double-click or Esc closes it.
 
 ### History
 
-Everything is kept for 30 days in `~/Library/Application Support/Glint/History` and browsable from the menu. Save copies a file to your save folder (Desktop by default).
+Everything is kept for 30 days in `~/Library/Application Support/Glint/History` and browsable from the menu. Screenshots also land in your save folder the moment you take them; Save copies videos and editor exports there too.
 
 ## Details worth knowing
 
@@ -135,7 +135,7 @@ The installer always pulls `Glint.zip` from the latest release.
 
 Checked by self-test and by rendering the app's own windows: capture, crop, all annotation tools, OCR, recording, GIF export, scroll stitching, full-page band detection, and the look of the widget, popup, settings and editor. The one-line install was run end to end on 2026-11-13.
 
-Not yet checked by hand: a real full-page capture in a browser, the middle-click trigger, hover name tags, dragging and pinning the widget, multi-monitor, Retina scaling, and the first-run permission prompt.
+Not yet checked by hand: a real full-page capture in a browser, the middle-click trigger, hover name tags, dragging and pinning the widget, pin docking under the widget, the 30-second thumbnail dismiss, multi-monitor, Retina scaling, and the first-run permission prompt.
 
 ## Roadmap
 

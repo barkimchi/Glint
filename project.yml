@@ -16,7 +16,7 @@ targets:
       properties:
         LSUIElement: true
         CFBundleDisplayName: Glint
-        CFBundleShortVersionString: "0.1.0"
+        CFBundleShortVersionString: "0.1.1"
         CFBundleVersion: "1"
         NSMicrophoneUsageDescription: "Glint records your microphone only when you turn on microphone audio for screen recordings."
         NSHumanReadableCopyright: "Copyright 2026 Bar Kimchi"

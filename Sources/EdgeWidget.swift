@@ -71,10 +71,14 @@ enum EdgeWidget {
         }
     }
 
+    /// The widget panel's current frame, so pins can dock under it.
+    static var frame: NSRect? { panel?.frame }
+
     static func place(expanded: Bool, animate: Bool = false) {
         guard let p = panel else { return }
         (p.contentView as? EdgeWidgetView)?.expanded = expanded
         p.setFrame(frame(expanded: expanded), display: true, animate: animate)
+        Pins.dockAll()
     }
 
     /// Snap to whichever edge of whichever display the pointer is nearest.
@@ -198,7 +202,8 @@ final class EdgeWidgetView: NSView {
     }
 }
 
-/// Widget button art in the style of the "Crop" icon concept: ink selection corners framing one red mark per action.
+/// Widget button art: one distinct mark per action - white outlines with an amber focal point,
+/// and the Claude logo for Go to Claude.
 @MainActor
 enum EdgeGlyph {
     // Palette: grey plate, white corners, orange-yellow marks.
@@ -206,61 +211,231 @@ enum EdgeGlyph {
     static let paper = NSColor(srgbRed: 0x4A / 255, green: 0x4D / 255, blue: 0x52 / 255, alpha: 1)
     static let red = NSColor(srgbRed: 0xFF / 255, green: 0xB2 / 255, blue: 0x1A / 255, alpha: 1)
 
+    /// Action glyphs: one distinct mark per action. No shared capture brackets -
+    /// they made the buttons hard to tell apart at a glance.
     static func image(_ a: HotkeyAction) -> NSImage {
         NSImage(size: NSSize(width: 36, height: 36), flipped: false) { _ in
-            // Corner brackets
-            let c = NSBezierPath()
-            c.lineWidth = 2.8; c.lineCapStyle = .round; c.lineJoinStyle = .round
-            let lo: CGFloat = 4, hi: CGFloat = 32, arm: CGFloat = 7
-            for (x, y, dx, dy) in [(lo, lo, 1.0, 1.0), (hi, lo, -1.0, 1.0), (hi, hi, -1.0, -1.0), (lo, hi, 1.0, -1.0)] {
-                c.move(to: NSPoint(x: x + arm * dx, y: y)); c.line(to: NSPoint(x: x, y: y)); c.line(to: NSPoint(x: x, y: y + arm * dy))
-            }
-            ink.setStroke(); c.stroke()
-
-            red.setFill(); red.setStroke()
-            let m = NSBezierPath()
-            m.lineWidth = 2.6; m.lineCapStyle = .round; m.lineJoinStyle = .round
+            ink.setStroke()
+            let w = NSBezierPath()
+            w.lineWidth = 2.6; w.lineCapStyle = .round; w.lineJoinStyle = .round
             func line(_ x1: CGFloat, _ y1: CGFloat, _ x2: CGFloat, _ y2: CGFloat) {
-                m.move(to: NSPoint(x: x1, y: y1)); m.line(to: NSPoint(x: x2, y: y2))
+                w.move(to: NSPoint(x: x1, y: y1)); w.line(to: NSPoint(x: x2, y: y2))
+            }
+            func outline(_ r: NSRect, _ rad: CGFloat) {
+                let p = NSBezierPath(roundedRect: r, xRadius: rad, yRadius: rad)
+                p.lineWidth = 2.6; p.lineCapStyle = .round; p.lineJoinStyle = .round
+                p.stroke()
+            }
+            func chip(_ r: NSRect, _ rad: CGFloat) {
+                NSBezierPath(roundedRect: r, xRadius: rad, yRadius: rad).fill()
             }
             switch a {
-            case .area: // the glint
-                let k: CGFloat = 8, q: CGFloat = 1.6
-                let pts = [NSPoint(x: 18, y: 18 + k), NSPoint(x: 18 + k, y: 18), NSPoint(x: 18, y: 18 - k), NSPoint(x: 18 - k, y: 18)]
-                let g = NSBezierPath(); g.move(to: pts[3])
-                for (i, p) in pts.enumerated() {
-                    let sx: CGFloat = (i == 0 || i == 3) ? -1 : 1, sy: CGFloat = (i < 2) ? 1 : -1
-                    g.curve(to: p, controlPoint1: NSPoint(x: 18 + sx * q, y: 18 + sy * q), controlPoint2: NSPoint(x: 18 + sx * q, y: 18 + sy * q))
-                }
-                g.close(); g.fill()
+            case .area: // dashed selection with an amber corner dot
+                let d = NSBezierPath(roundedRect: NSRect(x: 9, y: 9, width: 18, height: 18), xRadius: 3, yRadius: 3)
+                d.lineWidth = 2.6; d.lineCapStyle = .round
+                d.setLineDash([4, 3], count: 2, phase: 0)
+                d.stroke()
+                red.setFill()
+                NSBezierPath(ovalIn: NSRect(x: 24.6, y: 6.6, width: 4.8, height: 4.8)).fill()
             case .window:
-                m.appendRoundedRect(NSRect(x: 10.5, y: 11.5, width: 15, height: 13), xRadius: 2.5, yRadius: 2.5)
-                line(10.5, 20, 25.5, 20); m.stroke()
+                outline(NSRect(x: 9.5, y: 10.5, width: 17, height: 15), 2.5)
+                red.setFill(); chip(NSRect(x: 12.5, y: 20.5, width: 11, height: 3), 1.5)
             case .fullscreen:
-                NSBezierPath(roundedRect: NSRect(x: 10, y: 11, width: 16, height: 14), xRadius: 3, yRadius: 3).fill()
+                outline(NSRect(x: 9, y: 11, width: 18, height: 14), 3)
+                red.setFill(); chip(NSRect(x: 13, y: 15, width: 10, height: 6), 1.5)
             case .scroll:
-                line(18, 10.5, 18, 25.5)
-                line(14, 21.5, 18, 25.5); line(22, 21.5, 18, 25.5)
-                line(14, 14.5, 18, 10.5); line(22, 14.5, 18, 10.5); m.stroke()
+                line(18, 12, 18, 24); w.stroke()
+                red.setFill()
+                let up = NSBezierPath()
+                up.move(to: NSPoint(x: 18, y: 27)); up.line(to: NSPoint(x: 13.5, y: 20.5)); up.line(to: NSPoint(x: 22.5, y: 20.5)); up.close(); up.fill()
+                let dn = NSBezierPath()
+                dn.move(to: NSPoint(x: 18, y: 9)); dn.line(to: NSPoint(x: 13.5, y: 15.5)); dn.line(to: NSPoint(x: 22.5, y: 15.5)); dn.close(); dn.fill()
             case .page:
-                line(11.5, 24, 24.5, 24); line(11.5, 18, 24.5, 18); line(11.5, 12, 19, 12); m.stroke()
-            case .ocr: // a magnifier: inspect the screen and lift the text off it
-                m.appendOval(in: NSRect(x: 10.5, y: 14, width: 11.5, height: 11.5))
-                line(20.6, 15.4, 25.5, 10.5); m.stroke()
-            case .claude: // a chat bubble
-                m.appendRoundedRect(NSRect(x: 10, y: 14, width: 16, height: 11.5), xRadius: 3.5, yRadius: 3.5)
-                m.move(to: NSPoint(x: 14, y: 14)); m.line(to: NSPoint(x: 13, y: 10)); m.line(to: NSPoint(x: 18, y: 14))
-                m.stroke()
+                outline(NSRect(x: 10.5, y: 9.5, width: 15, height: 17), 2)
+                red.setFill()
+                chip(NSRect(x: 14, y: 19.5, width: 8, height: 2.4), 1.2)
+                chip(NSRect(x: 14, y: 15.5, width: 8, height: 2.4), 1.2)
+                chip(NSRect(x: 14, y: 11.5, width: 5, height: 2.4), 1.2)
+            case .ocr:
+                let lens = NSBezierPath(ovalIn: NSRect(x: 9.5, y: 13.5, width: 12, height: 12))
+                lens.lineWidth = 2.6; lens.stroke()
+                w.lineWidth = 2.8; line(20, 15, 25.5, 9.5); w.stroke()
+                red.setFill()
+                NSBezierPath(ovalIn: NSRect(x: 13.3, y: 17.3, width: 4.4, height: 4.4)).fill()
+            case .claude:
+                // Claude logo (simple-icons path, 24x24) scaled into the tile, y flipped.
+                red.setFill()
+                let cl = NSBezierPath()
+                cl.move(to: NSPoint(x: 9.80, y: 13.55))
+                cl.line(to: NSPoint(x: 15.11, y: 16.53))
+                cl.line(to: NSPoint(x: 15.20, y: 16.79))
+                cl.line(to: NSPoint(x: 15.11, y: 16.93))
+                cl.line(to: NSPoint(x: 14.85, y: 16.93))
+                cl.line(to: NSPoint(x: 13.96, y: 16.99))
+                cl.line(to: NSPoint(x: 10.93, y: 17.07))
+                cl.line(to: NSPoint(x: 8.30, y: 17.18))
+                cl.line(to: NSPoint(x: 5.75, y: 17.31))
+                cl.line(to: NSPoint(x: 5.11, y: 17.45))
+                cl.line(to: NSPoint(x: 4.51, y: 18.24))
+                cl.line(to: NSPoint(x: 4.57, y: 18.64))
+                cl.line(to: NSPoint(x: 5.11, y: 19.00))
+                cl.line(to: NSPoint(x: 5.88, y: 18.93))
+                cl.line(to: NSPoint(x: 7.59, y: 18.82))
+                cl.line(to: NSPoint(x: 10.15, y: 18.64))
+                cl.line(to: NSPoint(x: 12.01, y: 18.53))
+                cl.line(to: NSPoint(x: 14.76, y: 18.24))
+                cl.line(to: NSPoint(x: 15.20, y: 18.24))
+                cl.line(to: NSPoint(x: 15.26, y: 18.42))
+                cl.line(to: NSPoint(x: 15.11, y: 18.53))
+                cl.line(to: NSPoint(x: 14.99, y: 18.64))
+                cl.line(to: NSPoint(x: 12.34, y: 20.43))
+                cl.line(to: NSPoint(x: 9.48, y: 22.33))
+                cl.line(to: NSPoint(x: 7.97, y: 23.43))
+                cl.line(to: NSPoint(x: 7.16, y: 23.98))
+                cl.line(to: NSPoint(x: 6.75, y: 24.50))
+                cl.line(to: NSPoint(x: 6.57, y: 25.63))
+                cl.line(to: NSPoint(x: 7.31, y: 26.45))
+                cl.line(to: NSPoint(x: 8.30, y: 26.38))
+                cl.line(to: NSPoint(x: 8.55, y: 26.31))
+                cl.line(to: NSPoint(x: 9.56, y: 25.54))
+                cl.line(to: NSPoint(x: 11.70, y: 23.88))
+                cl.line(to: NSPoint(x: 14.50, y: 21.81))
+                cl.line(to: NSPoint(x: 14.91, y: 21.47))
+                cl.line(to: NSPoint(x: 15.08, y: 21.59))
+                cl.line(to: NSPoint(x: 15.10, y: 21.67))
+                cl.line(to: NSPoint(x: 14.91, y: 21.98))
+                cl.line(to: NSPoint(x: 13.39, y: 24.73))
+                cl.line(to: NSPoint(x: 11.76, y: 27.53))
+                cl.line(to: NSPoint(x: 11.04, y: 28.69))
+                cl.line(to: NSPoint(x: 10.85, y: 29.39))
+                cl.curve(to: NSPoint(x: 10.73, y: 30.21), controlPoint1: NSPoint(x: 10.78, y: 29.68), controlPoint2: NSPoint(x: 10.73, y: 29.92))
+                cl.line(to: NSPoint(x: 11.57, y: 31.35))
+                cl.line(to: NSPoint(x: 12.04, y: 31.50))
+                cl.line(to: NSPoint(x: 13.16, y: 31.35))
+                cl.line(to: NSPoint(x: 13.63, y: 30.94))
+                cl.line(to: NSPoint(x: 14.33, y: 29.35))
+                cl.line(to: NSPoint(x: 15.45, y: 26.84))
+                cl.line(to: NSPoint(x: 17.20, y: 23.43))
+                cl.line(to: NSPoint(x: 17.71, y: 22.42))
+                cl.line(to: NSPoint(x: 17.99, y: 21.49))
+                cl.line(to: NSPoint(x: 18.09, y: 21.20))
+                cl.line(to: NSPoint(x: 18.27, y: 21.20))
+                cl.line(to: NSPoint(x: 18.27, y: 21.36))
+                cl.line(to: NSPoint(x: 18.41, y: 23.28))
+                cl.line(to: NSPoint(x: 18.68, y: 25.64))
+                cl.line(to: NSPoint(x: 18.94, y: 28.67))
+                cl.line(to: NSPoint(x: 19.02, y: 29.53))
+                cl.line(to: NSPoint(x: 19.45, y: 30.55))
+                cl.line(to: NSPoint(x: 20.29, y: 31.10))
+                cl.line(to: NSPoint(x: 20.94, y: 30.79))
+                cl.line(to: NSPoint(x: 21.48, y: 30.02))
+                cl.line(to: NSPoint(x: 21.41, y: 29.52))
+                cl.line(to: NSPoint(x: 21.09, y: 27.44))
+                cl.line(to: NSPoint(x: 20.46, y: 24.17))
+                cl.line(to: NSPoint(x: 20.05, y: 21.99))
+                cl.line(to: NSPoint(x: 20.29, y: 21.99))
+                cl.line(to: NSPoint(x: 20.56, y: 22.26))
+                cl.line(to: NSPoint(x: 21.67, y: 23.73))
+                cl.line(to: NSPoint(x: 23.53, y: 26.05))
+                cl.line(to: NSPoint(x: 24.35, y: 26.97))
+                cl.line(to: NSPoint(x: 25.30, y: 27.99))
+                cl.line(to: NSPoint(x: 25.92, y: 28.47))
+                cl.line(to: NSPoint(x: 27.08, y: 28.47))
+                cl.line(to: NSPoint(x: 27.93, y: 27.20))
+                cl.line(to: NSPoint(x: 27.55, y: 25.89))
+                cl.line(to: NSPoint(x: 26.35, y: 24.38))
+                cl.line(to: NSPoint(x: 25.36, y: 23.09))
+                cl.line(to: NSPoint(x: 23.94, y: 21.18))
+                cl.line(to: NSPoint(x: 23.05, y: 19.65))
+                cl.line(to: NSPoint(x: 23.14, y: 19.53))
+                cl.line(to: NSPoint(x: 23.35, y: 19.55))
+                cl.line(to: NSPoint(x: 26.56, y: 20.23))
+                cl.line(to: NSPoint(x: 28.29, y: 20.54))
+                cl.line(to: NSPoint(x: 30.36, y: 20.90))
+                cl.line(to: NSPoint(x: 31.30, y: 20.46))
+                cl.line(to: NSPoint(x: 31.40, y: 20.02))
+                cl.line(to: NSPoint(x: 31.03, y: 19.11))
+                cl.line(to: NSPoint(x: 28.82, y: 18.56))
+                cl.line(to: NSPoint(x: 26.22, y: 18.04))
+                cl.line(to: NSPoint(x: 22.36, y: 17.13))
+                cl.line(to: NSPoint(x: 22.31, y: 17.09))
+                cl.line(to: NSPoint(x: 22.36, y: 17.03))
+                cl.line(to: NSPoint(x: 24.11, y: 16.86))
+                cl.line(to: NSPoint(x: 24.85, y: 16.82))
+                cl.line(to: NSPoint(x: 26.67, y: 16.82))
+                cl.line(to: NSPoint(x: 30.07, y: 16.57))
+                cl.line(to: NSPoint(x: 30.96, y: 15.98))
+                cl.line(to: NSPoint(x: 31.49, y: 15.26))
+                cl.line(to: NSPoint(x: 31.40, y: 14.72))
+                cl.line(to: NSPoint(x: 30.03, y: 14.02))
+                cl.line(to: NSPoint(x: 28.19, y: 14.46))
+                cl.line(to: NSPoint(x: 23.89, y: 15.48))
+                cl.line(to: NSPoint(x: 22.41, y: 15.85))
+                cl.line(to: NSPoint(x: 22.21, y: 15.85))
+                cl.line(to: NSPoint(x: 22.21, y: 15.73))
+                cl.line(to: NSPoint(x: 23.44, y: 14.53))
+                cl.line(to: NSPoint(x: 25.69, y: 12.49))
+                cl.line(to: NSPoint(x: 28.51, y: 9.87))
+                cl.line(to: NSPoint(x: 28.66, y: 9.22))
+                cl.line(to: NSPoint(x: 28.29, y: 8.71))
+                cl.line(to: NSPoint(x: 27.91, y: 8.76))
+                cl.line(to: NSPoint(x: 25.43, y: 10.63))
+                cl.line(to: NSPoint(x: 24.48, y: 11.47))
+                cl.line(to: NSPoint(x: 22.31, y: 13.29))
+                cl.line(to: NSPoint(x: 22.17, y: 13.29))
+                cl.line(to: NSPoint(x: 22.17, y: 13.10))
+                cl.line(to: NSPoint(x: 22.67, y: 12.37))
+                cl.line(to: NSPoint(x: 25.30, y: 8.41))
+                cl.line(to: NSPoint(x: 25.44, y: 7.19))
+                cl.line(to: NSPoint(x: 25.25, y: 6.79))
+                cl.line(to: NSPoint(x: 24.56, y: 6.56))
+                cl.line(to: NSPoint(x: 23.81, y: 6.69))
+                cl.line(to: NSPoint(x: 22.27, y: 8.86))
+                cl.line(to: NSPoint(x: 20.68, y: 11.30))
+                cl.line(to: NSPoint(x: 19.39, y: 13.48))
+                cl.line(to: NSPoint(x: 19.24, y: 13.39))
+                cl.line(to: NSPoint(x: 18.48, y: 5.23))
+                cl.line(to: NSPoint(x: 18.12, y: 4.81))
+                cl.line(to: NSPoint(x: 17.30, y: 4.50))
+                cl.line(to: NSPoint(x: 16.62, y: 5.02))
+                cl.line(to: NSPoint(x: 16.26, y: 5.86))
+                cl.line(to: NSPoint(x: 16.62, y: 7.52))
+                cl.line(to: NSPoint(x: 17.06, y: 9.68))
+                cl.line(to: NSPoint(x: 17.41, y: 11.41))
+                cl.line(to: NSPoint(x: 17.73, y: 13.54))
+                cl.line(to: NSPoint(x: 17.92, y: 14.25))
+                cl.line(to: NSPoint(x: 17.91, y: 14.30))
+                cl.line(to: NSPoint(x: 17.75, y: 14.28))
+                cl.line(to: NSPoint(x: 16.14, y: 12.07))
+                cl.line(to: NSPoint(x: 13.69, y: 8.76))
+                cl.line(to: NSPoint(x: 11.75, y: 6.68))
+                cl.line(to: NSPoint(x: 11.29, y: 6.49))
+                cl.line(to: NSPoint(x: 10.48, y: 6.91))
+                cl.line(to: NSPoint(x: 10.55, y: 7.66))
+                cl.line(to: NSPoint(x: 11.01, y: 8.32))
+                cl.line(to: NSPoint(x: 13.69, y: 11.73))
+                cl.line(to: NSPoint(x: 15.31, y: 13.85))
+                cl.line(to: NSPoint(x: 16.35, y: 15.07))
+                cl.line(to: NSPoint(x: 16.35, y: 15.25))
+                cl.line(to: NSPoint(x: 16.29, y: 15.25))
+                cl.line(to: NSPoint(x: 9.15, y: 10.62))
+                cl.line(to: NSPoint(x: 7.88, y: 10.46))
+                cl.line(to: NSPoint(x: 7.34, y: 10.97))
+                cl.line(to: NSPoint(x: 7.41, y: 11.81))
+                cl.line(to: NSPoint(x: 7.67, y: 12.08))
+                cl.line(to: NSPoint(x: 9.81, y: 13.56))
+                cl.close()
+                cl.fill()
             case .record:
-                NSBezierPath(ovalIn: NSRect(x: 11.5, y: 11.5, width: 13, height: 13)).fill()
+                let ring = NSBezierPath(ovalIn: NSRect(x: 9.5, y: 9.5, width: 17, height: 17))
+                ring.lineWidth = 2.4; ring.stroke()
+                red.setFill()
+                NSBezierPath(ovalIn: NSRect(x: 13, y: 13, width: 10, height: 10)).fill()
             }
             return true
         }
     }
-}
 
-extension EdgeGlyph {
-    /// Menu bar version of the app icon: the glint with its dot, as a template image so macOS tints it.
     static func menuBarImage() -> NSImage {
         let img = NSImage(size: NSSize(width: 18, height: 18), flipped: false) { _ in
             let c: CGFloat = 8.5, k: CGFloat = 7.5, q: CGFloat = 1.3

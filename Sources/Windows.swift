@@ -4,7 +4,55 @@ import SwiftUI
 // MARK: - Quick access thumbnail
 
 final class ThumbState: ObservableObject {
-    @Published var hovering = false
+    @Published var hovering = false {
+        didSet {
+            if hovering {
+                cancelDismiss()
+                showControls()
+            } else {
+                armDismiss()
+                scheduleHideControls()
+            }
+        }
+    }
+    /// Controls stay in the view hierarchy and fade; inserting them on hover made
+    /// early clicks land on nothing and a 1px slip could hide a button mid-click.
+    @Published var controlsVisible = false
+    weak var panel: NSPanel?
+    private var dismissWork: DispatchWorkItem?
+    private var hideWork: DispatchWorkItem?
+
+    /// Unpinned thumbnails dismiss themselves; the file stays in the save folder.
+    /// Hovering pauses the countdown, leaving restarts it.
+    func armDismiss(after delay: TimeInterval = 30) {
+        dismissWork?.cancel()
+        let w = DispatchWorkItem { [weak self] in
+            guard let self, let panel else { return }
+            MainActor.assumeIsolated { QuickAccess.close(panel) }
+        }
+        dismissWork = w
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: w)
+    }
+
+    func cancelDismiss() {
+        dismissWork?.cancel()
+        dismissWork = nil
+    }
+
+    private func showControls() {
+        hideWork?.cancel()
+        hideWork = nil
+        controlsVisible = true
+    }
+
+    private func scheduleHideControls() {
+        hideWork?.cancel()
+        let w = DispatchWorkItem { [weak self] in
+            MainActor.assumeIsolated { self?.controlsVisible = false }
+        }
+        hideWork = w
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15, execute: w)
+    }
 }
 
 @MainActor
@@ -30,9 +78,11 @@ enum QuickAccess {
                 if let p { close(p) }
             }
             p.contentView = NSHostingView(rootView: view)
+            state.panel = p
             panels.append((p, state))
             layout()
             p.orderFrontRegardless()
+            state.armDismiss()
         }
     }
 
@@ -73,45 +123,10 @@ struct QuickAccessView: View {
         ZStack {
             Image(nsImage: image).resizable().aspectRatio(contentMode: .fill)
                 .frame(width: 220, height: height).clipped()
-            if state.hovering {
-                Color.black.opacity(0.5)
-                VStack(spacing: 8) {
-                    HStack(spacing: 8) {
-                        action("doc.on.doc", "Copy") { Store.copyToPasteboard(url); Toast.show("Copied") }
-                        action("square.and.arrow.down", "Save") {
-                            if let u = Store.exportCopy(url) { Toast.show("Saved to \(u.deletingLastPathComponent().lastPathComponent)") }
-                            else { Toast.show("Save failed") }
-                        }
-                    }
-                    HStack(spacing: 8) {
-                        if isVideo {
-                            action("photo.stack", "GIF") {
-                                Toast.show("Making GIF…")
-                                Task {
-                                    do { QuickAccess.show(url: try await GIF.make(from: url), isVideo: false) }
-                                    catch { Toast.show("GIF failed") }
-                                }
-                            }
-                            action("folder", "Show") { NSWorkspace.shared.activateFileViewerSelecting([url]) }
-                        } else {
-                            action("pencil.tip.crop.circle", "Annotate") { EditorWindow.open(url) }
-                            action("pin", "Pin") { Pins.pin(url) }
-                        }
-                    }
-                }
-                VStack {
-                    HStack {
-                        Spacer()
-                        Button(action: close) {
-                            Image(systemName: "xmark.circle.fill").font(.system(size: 16))
-                                .foregroundStyle(.white.opacity(0.9))
-                        }.buttonStyle(.plain).padding(6)
-                    }
-                    Spacer()
-                }
-            } else if isVideo {
+            if isVideo && !state.controlsVisible {
                 Image(systemName: "play.circle.fill").font(.system(size: 34)).foregroundStyle(.white.opacity(0.9))
             }
+            overlay
         }
         .frame(width: 220, height: height)
         .clipShape(RoundedRectangle(cornerRadius: 10))
@@ -119,6 +134,51 @@ struct QuickAccessView: View {
         .onHover { state.hovering = $0 }
         .onTapGesture(count: 2) { QuickAccess.openInViewer(url, isVideo: isVideo) }
         .onDrag { NSItemProvider(contentsOf: url) ?? NSItemProvider() }
+    }
+
+    /// Always in the hierarchy so the buttons exist the instant the pointer arrives;
+    /// they fade in and out instead of being inserted and removed.
+    private var overlay: some View {
+        ZStack {
+            Color.black.opacity(0.5)
+            VStack(spacing: 8) {
+                HStack(spacing: 8) {
+                    action("doc.on.doc", "Copy") { Store.copyToPasteboard(url); Toast.show("Copied") }
+                    action("square.and.arrow.down", "Save") {
+                        if let u = Store.exportCopy(url) { Toast.show("Saved to \(u.deletingLastPathComponent().lastPathComponent)") }
+                        else { Toast.show("Save failed") }
+                    }
+                }
+                HStack(spacing: 8) {
+                    if isVideo {
+                        action("photo.stack", "GIF") {
+                            Toast.show("Making GIF…")
+                            Task {
+                                do { QuickAccess.show(url: try await GIF.make(from: url), isVideo: false) }
+                                catch { Toast.show("GIF failed") }
+                            }
+                        }
+                        action("folder", "Show") { NSWorkspace.shared.activateFileViewerSelecting([url]) }
+                    } else {
+                        action("pencil.tip.crop.circle", "Annotate") { EditorWindow.open(url) }
+                        action("pin", "Pin") { Pins.pin(url); close() }
+                    }
+                }
+            }
+            VStack {
+                HStack {
+                    Spacer()
+                    Button(action: close) {
+                        Image(systemName: "xmark.circle.fill").font(.system(size: 16))
+                            .foregroundStyle(.white.opacity(0.9))
+                    }.buttonStyle(.plain).padding(6)
+                }
+                Spacer()
+            }
+        }
+        .opacity(state.controlsVisible ? 1 : 0)
+        .allowsHitTesting(state.controlsVisible)
+        .animation(.easeOut(duration: 0.12), value: state.controlsVisible)
     }
 
     private func action(_ symbol: String, _ title: String, _ run: @escaping () -> Void) -> some View {
@@ -152,9 +212,7 @@ enum Pins {
     static func pin(_ cg: CGImage) {
         let scale = NSScreen.main?.backingScaleFactor ?? 2
         let size = NSSize(width: CGFloat(cg.width) / scale, height: CGFloat(cg.height) / scale)
-        let mouse = NSEvent.mouseLocation
-        let p = PinPanel(contentRect: NSRect(x: mouse.x - size.width / 2, y: mouse.y - size.height / 2,
-                                             width: size.width, height: size.height),
+        let p = PinPanel(contentRect: NSRect(origin: .zero, size: size),
                          styleMask: [.borderless, .nonactivatingPanel, .resizable], backing: .buffered, defer: false)
         p.level = .floating
         p.hasShadow = true
@@ -164,13 +222,39 @@ enum Pins {
         p.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         p.contentAspectRatio = size
         p.contentView = PinView(image: cg)
-        p.orderFrontRegardless()
         all.append(p)
+        if EdgeWidget.isVisible, EdgeWidget.frame != nil {
+            dockAll()
+        } else { // widget hidden: drop the pin at the pointer, as before
+            let mouse = NSEvent.mouseLocation
+            p.setFrameOrigin(NSPoint(x: mouse.x - size.width / 2, y: mouse.y - size.height / 2))
+        }
+        p.orderFrontRegardless()
     }
 
     static func remove(_ p: NSPanel) {
         p.orderOut(nil)
         all.removeAll { $0 === p }
+        dockAll()
+    }
+
+    /// Pins hang directly under the edge widget (above it when the widget sits on the
+    /// bottom edge, where there is no room below) and follow it wherever it is dragged.
+    static func dockAll() {
+        guard EdgeWidget.isVisible, let wf = EdgeWidget.frame else { return }
+        let vf = EdgeWidget.screen.visibleFrame
+        let gap: CGFloat = 8
+        var offset: CGFloat = 0
+        for p in all {
+            let s = p.frame.size
+            let below = EdgeWidget.edge != .bottom
+            var o = NSPoint(x: wf.midX - s.width / 2,
+                            y: below ? wf.minY - gap - s.height - offset : wf.maxY + gap + offset)
+            offset += s.height + gap
+            o.x = min(max(o.x, vf.minX + 4), max(vf.minX + 4, vf.maxX - s.width - 4))
+            o.y = min(max(o.y, vf.minY + 4), max(vf.minY + 4, vf.maxY - s.height - 4))
+            p.setFrameOrigin(o)
+        }
     }
 
     static func unlockAll() {

@@ -14,10 +14,15 @@ enum Store {
         return u
     }()
 
-    nonisolated static let saveFolderKey = "saveFolder.v1"
+    // v2: the save folder moved to Desktop/Glint Screenshots. A folder chosen with v1 is not
+    // carried over - every install lands on the new default, and no files are moved or deleted.
+    // Choosing a folder in Settings still works and is stored here.
+    nonisolated static let saveFolderKey = "saveFolder.v2"
     nonisolated static let defaultSaveDir = FileManager.default.urls(for: .desktopDirectory, in: .userDomainMask)[0]
+        .appendingPathComponent("Glint Screenshots", isDirectory: true)
 
-    /// Where "Save" puts files. Set in Settings; defaults to the Desktop.
+    /// Where "Save" puts files, and where every new screenshot lands. Set in Settings;
+    /// defaults to Desktop/Glint Screenshots.
     nonisolated static var savedDir: URL {
         let u = UserDefaults.standard.string(forKey: saveFolderKey).map { URL(fileURLWithPath: $0, isDirectory: true) }
             ?? defaultSaveDir

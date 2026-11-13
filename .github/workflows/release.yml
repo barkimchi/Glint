@@ -1,0 +1,30 @@
+name: Release
+
+# Triggered by pushing a version tag (git tag vX.Y.Z && git push origin vX.Y.Z).
+# Builds Glint.zip on a macOS runner and publishes it as a GitHub Release,
+# which is what the npx installer downloads.
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - name: Generate project
+        run: xcodegen
+      - name: Build
+        run: xcodebuild -project Glint.xcodeproj -scheme Glint -configuration Release -derivedDataPath build build
+      - name: Zip app
+        run: ditto -c -k --keepParent build/Build/Products/Release/Glint.app build/Glint.zip
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release create "${{ github.ref_name }}" build/Glint.zip --title "Glint ${{ github.ref_name }}" --generate-notes
