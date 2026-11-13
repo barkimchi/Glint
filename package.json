@@ -1,6 +1,6 @@
 {
   "name": "glint-app",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "private": true,
   "description": "Installer for Glint, a native macOS screenshot and screen recording tool.",
   "os": ["darwin"],
