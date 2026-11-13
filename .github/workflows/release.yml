@@ -39,11 +39,20 @@ jobs:
         env:
           SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
         run: |
-          set -o pipefail
-          # In-repo pure-Python signer (Ed25519, RFC 8032): no downloaded binary,
-          # deterministic output identical to Sparkle's sign_update.
-          echo "$SPARKLE_PRIVATE_KEY" | python3 .github/sign_update.py --ed-key-file - build/Glint.zip | tr -d '\n' > sig.txt
-          test -s sig.txt
+          set -euo pipefail
+          # Official Sparkle sign_update from the pinned, checksum-verified release
+          # tarball. Extracts to ./bin/sign_update (NOT ./Sparkle-2.10.1/bin/);
+          # never use find here - the tarball ships three files named sign_update
+          # (this binary, a legacy DSA script, a dSYM) and the wrong match fails
+          # silently with its usage text swallowed into sig.txt.
+          curl -sL https://github.com/sparkle-project/Sparkle/releases/download/2.10.1/Sparkle-2.10.1.tar.xz -o /tmp/sparkle.tar.xz
+          echo '1a856d2a9edb8e628de88121d7be04cf0e2167f8641650b78fca00b14244cf27  /tmp/sparkle.tar.xz' | shasum -a 256 -c -
+          tar xJf /tmp/sparkle.tar.xz ./bin/sign_update
+          KF=$(mktemp)
+          trap 'rm -f "$KF"' EXIT
+          printf '%s' "$SPARKLE_PRIVATE_KEY" > "$KF"
+          ./bin/sign_update --ed-key-file "$KF" build/Glint.zip | tr -d '\n' > sig.txt
+          grep -q 'sparkle:edSignature' sig.txt
       - name: Publish release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
