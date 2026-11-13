@@ -15,7 +15,7 @@ Download the app and drag it into Applications:
 
 1. Download [Glint.zip](https://github.com/barkimchi/Glint/releases/latest/download/Glint.zip) (the latest release; older ones live under [Releases](https://github.com/barkimchi/Glint/releases)).
 2. Double-click the zip to unzip it, then drag `Glint.app` into your Applications folder and open it from there.
-3. Glint is not notarized with Apple yet, so on first launch macOS warns that it cannot verify the developer. Right-click (Control-click) Glint in Applications, choose Open, then confirm with Open. You only have to do this once; macOS remembers the choice. The quarantine flag stays in place - this is the supported way to open an app that is not notarized.
+3. Glint is not notarized with Apple yet, so the first time you open it macOS warns that it can't check the app for malicious software. If you're comfortable opening it anyway (you got it from this repo): open System Settings > Privacy & Security, scroll down, click Open Anyway next to Glint, then Open at the prompt. That's Apple's documented way to open an app that isn't notarized; nothing is disabled and the quarantine flag stays. macOS remembers the choice for that copy of the app - an update can bring the warning back, and the same steps clear it.
 
 Glint checks for updates on its own and offers to install them; the menu also has Check for Updates…. Updates are verified against Glint's Sparkle key before anything is installed. (Releases before v0.1.2 don't self-update: install the latest zip once to get onto the updater.)
 
@@ -28,8 +28,6 @@ npx github:barkimchi/glint-app
 ```
 
 That downloads the release pinned in this repo, verifies it against the pinned checksum, puts `Glint.app` in `~/Applications` and opens it. You need Node for `npx`, nothing else.
-
-> "Glint" is a working name and has not been vetted yet.
 
 ## What it does
 
@@ -152,4 +150,4 @@ The release workflow publishes the zip, then pins its tag and checksum into `bin
 - Custom app opens: choose which app the quick-open action launches, not just Claude
 - Shortcut selection in the middle-click popup (scope to settle: picking which actions appear, remapping keys from the popup, or both)
 - Clearer first run: permissions and where screenshots are saved
-- Apple Developer ID signing and notarization, so Gatekeeper can verify the app (needs a paid Apple Developer account)
+- Apple notarization, so first launch needs no security override (Developer ID signing itself is already done)
