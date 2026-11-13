@@ -12,17 +12,19 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 
-echo "Downloading Glint…"
-if ! curl -fsSL "https://github.com/$REPO/releases/latest/download/Glint.zip" -o "$TMP/Glint.zip" 2>/dev/null; then
+# The release tag and its checksum are pinned in this repo at publish time, so the
+# installer script, the expected checksum and the asset all come from one immutable
+# source. Root of trust: this repository, fetched over HTTPS. This catches a release
+# asset that doesn't match what the repo published; it is not publisher identity.
+TAG="$(tr -d '[:space:]' < "$SCRIPT_DIR/RELEASE")"
+PINNED="$(tr -d '[:space:]' < "$SCRIPT_DIR/SHA256")"
+
+echo "Downloading Glint $TAG…"
+if ! curl -fsSL "https://github.com/$REPO/releases/download/$TAG/Glint.zip" -o "$TMP/Glint.zip" 2>/dev/null; then
   # Private repo: fall back to the GitHub CLI, which carries your sign-in.
   command -v gh >/dev/null || { echo "Download failed. If the repo is private, install the GitHub CLI and run: gh auth login"; exit 1; }
-  gh release download --repo "$REPO" --pattern "Glint.zip" --dir "$TMP" --clobber
+  gh release download "$TAG" --repo "$REPO" --pattern "Glint.zip" --dir "$TMP" --clobber
 fi
-
-# Verify the download against the checksum pinned in this repo at release time.
-# This catches a release asset that doesn't match what the repo published; the
-# root of trust is this repository itself, fetched over HTTPS.
-PINNED="$(tr -d '[:space:]' < "$SCRIPT_DIR/SHA256")"
 ACTUAL="$(shasum -a 256 "$TMP/Glint.zip" | awk '{print $1}')"
 if [ "$ACTUAL" != "$PINNED" ]; then
   echo "Checksum mismatch: the download does not match the release pinned in the repo." >&2

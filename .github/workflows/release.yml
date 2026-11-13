@@ -35,8 +35,6 @@ jobs:
           fi
       - name: Zip app
         run: ditto -c -k --keepParent build/Build/Products/Release/Glint.app build/Glint.zip
-      - name: Pin installer checksum
-        run: shasum -a 256 build/Glint.zip | awk '{print $1}' > bin/SHA256
       - name: Sign update
         env:
           SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
@@ -57,6 +55,10 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git fetch origin master
           git checkout -B appcast-publish origin/master
-          git add appcast.xml bin/SHA256
-          git commit -m "Appcast entry and installer checksum for ${{ github.ref_name }}"
+          # Pin the release the installer fetches, after the release exists, so the
+          # pinned asset is always available and the checksum always matches it.
+          shasum -a 256 build/Glint.zip | awk '{print $1}' > bin/SHA256
+          echo "${{ github.ref_name }}" > bin/RELEASE
+          git add appcast.xml bin/SHA256 bin/RELEASE
+          git commit -m "Appcast entry and installer pin for ${{ github.ref_name }}"
           git push origin HEAD:master

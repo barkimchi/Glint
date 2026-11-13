@@ -5,5 +5,5 @@
   "description": "Installer for Glint, a native macOS screenshot and screen recording tool.",
   "os": ["darwin"],
   "bin": { "glint-app": "bin/install.sh" },
-  "files": ["bin/install.sh", "bin/SHA256"]
+  "files": ["bin/install.sh", "bin/SHA256", "bin/RELEASE"]
 }

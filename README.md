@@ -15,9 +15,9 @@ Capture an area, a window, a whole page or a video, then mark it up and drop it 
 npx github:barkimchi/glint-app
 ```
 
-That downloads the latest release, puts `Glint.app` in `~/Applications` and opens it. Glint then checks for updates on its own and offers to install them; the menu also has Check for Updates…. (Releases before v0.1.2 don't self-update: run the `npx` line once more to get onto the updater.)
+That downloads the release pinned in this repo, puts `Glint.app` in `~/Applications` and opens it. Glint then checks for updates on its own and offers to install them; the menu also has Check for Updates…. (Releases before v0.1.2 don't self-update: run the `npx` line once more to get onto the updater.)
 
-You need Node for `npx`, nothing else. The installer verifies the download against a checksum pinned in this repo before installing anything, and never removes macOS's quarantine flag. On first launch macOS asks for Screen Recording access; Glint shows a button that opens the right System Settings pane. Release builds are ad hoc signed (hardened runtime on, no debug entitlements), so macOS may ask for that access again after an update. Glint is not yet notarized with Apple - that needs a Developer ID account and is on the roadmap.
+You need Node for `npx`, nothing else. The installer verifies the download against the pinned release's checksum before installing anything, and never removes macOS's quarantine flag. On first launch macOS asks for Screen Recording access; Glint shows a button that opens the right System Settings pane. Release builds are ad hoc signed (hardened runtime on, no debug entitlements), so macOS may ask for that access again after an update. Glint is not yet notarized with Apple - that needs a Developer ID account and is on the roadmap.
 
 > "Glint" is a working name and has not been vetted yet.
 
@@ -131,7 +131,7 @@ ditto -c -k --keepParent build/Build/Products/Release/Glint.app build/Glint.zip
 gh release create v0.1.1 build/Glint.zip --title "Glint 0.1.1"
 ```
 
-The installer always pulls `Glint.zip` from the latest release.
+The release workflow publishes the zip, then pins its tag and checksum into `bin/RELEASE` and `bin/SHA256`; the installer fetches exactly that pinned release.
 
 ## Roadmap
 
