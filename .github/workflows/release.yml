@@ -24,19 +24,21 @@ jobs:
         run: xcodebuild -project Glint.xcodeproj -scheme Glint -configuration Release -derivedDataPath build build
       - name: Zip app
         run: ditto -c -k --keepParent build/Build/Products/Release/Glint.app build/Glint.zip
-      - name: Sign update and update appcast
+      - name: Sign update
         env:
           SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
         run: |
           curl -sL https://github.com/sparkle-project/Sparkle/releases/download/2.10.1/Sparkle-2.10.1.tar.xz | tar xJ
-          SIG=$(echo "$SPARKLE_PRIVATE_KEY" | ./Sparkle-2.10.1/bin/sign_update --ed-key-file - build/Glint.zip | tr -d '\n')
-          python3 .github/update_appcast.py "${{ github.ref_name }}" "$SIG" "$(date -u '+%a, %d %b %Y %H:%M:%S +0000')"
+          echo "$SPARKLE_PRIVATE_KEY" | ./Sparkle-2.10.1/bin/sign_update --ed-key-file - build/Glint.zip | tr -d '\n' > sig.txt
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release create "${{ github.ref_name }}" build/Glint.zip --title "Glint ${{ github.ref_name }}" --generate-notes
+      - name: Publish appcast entry
+        run: |
+          python3 .github/update_appcast.py "${{ github.ref_name }}" "$(cat sig.txt)" "$(date -u '+%a, %d %b %Y %H:%M:%S +0000')"
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add appcast.xml
           git commit -m "Appcast entry for ${{ github.ref_name }}"
           git push
-      - name: Publish release
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release create "${{ github.ref_name }}" build/Glint.zip --title "Glint ${{ github.ref_name }}" --generate-notes
