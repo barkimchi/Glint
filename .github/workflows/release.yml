@@ -51,8 +51,11 @@ jobs:
           KF=$(mktemp)
           trap 'rm -f "$KF"' EXIT
           printf '%s' "$SPARKLE_PRIVATE_KEY" > "$KF"
-          ./bin/sign_update --ed-key-file "$KF" build/Glint.zip | tr -d '\n' > sig.txt
-          grep -q 'sparkle:edSignature' sig.txt
+          # Keep sign_update's combined output out of the pipe so a failure is loud
+          # (its errors go to stdout and previously vanished into sig.txt).
+          OUT=$(./bin/sign_update --ed-key-file "$KF" build/Glint.zip 2>&1) || { echo "sign_update failed with: $OUT"; exit 1; }
+          printf '%s' "$OUT" | tr -d '\n' > sig.txt
+          grep -q 'sparkle:edSignature' sig.txt || { echo "no signature in sign_update output: $OUT"; exit 1; }
       - name: Publish release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
