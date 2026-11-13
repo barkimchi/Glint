@@ -148,4 +148,3 @@ Not yet checked by hand: a real full-page capture in a browser, the middle-click
 - Custom app opens: choose which app the quick-open action launches, not just Claude
 - Shortcut selection in the middle-click popup (scope to settle: picking which actions appear, remapping keys from the popup, or both)
 - Clearer first run: permissions and where screenshots are saved
-- Name vetting, then a rename
