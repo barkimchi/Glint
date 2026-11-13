@@ -22,8 +22,8 @@ targets:
       properties:
         LSUIElement: true
         CFBundleDisplayName: Glint
-        CFBundleShortVersionString: "0.1.3"
-        CFBundleVersion: "3"
+        CFBundleShortVersionString: "0.1.4"
+        CFBundleVersion: "4"
         SUFeedURL: "https://raw.githubusercontent.com/barkimchi/glint-app/master/appcast.xml"
         SUPublicEDKey: "oBidFPnsI1gc/DkdrkZRbErsCahlrjdRDibpGgw2iEo="
         SUEnableAutomaticChecks: true
