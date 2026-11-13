@@ -68,6 +68,7 @@ A thin tab that hugs the border of your screen. Hover and it opens into the same
 Esc cancels any selection. Change or clear any shortcut in Settings: click it and press the new keys.
 
 <p align="center"><img src="docs/settings.png" alt="Glint Settings: shortcuts, recording options and save folder" width="380"></p>
+<p align="center"><sub>Captured with the previous default save folder; new installs default to Desktop/Glint Screenshots.</sub></p>
 <p align="center"><sub>Settings, shown here with customised shortcuts.</sub></p>
 
 ## After the capture
