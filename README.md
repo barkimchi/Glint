@@ -150,4 +150,4 @@ The release workflow publishes the zip, then pins its tag and checksum into `bin
 - Custom app opens: choose which app the quick-open action launches, not just Claude
 - Shortcut selection in the middle-click popup (scope to settle: picking which actions appear, remapping keys from the popup, or both)
 - Clearer first run: permissions and where screenshots are saved
-- Apple notarization, so first launch needs no security override (Developer ID signing itself is already done)
+- Apple notarization, so first launch needs no security override (Developer ID signing is prepared for a future release; current downloads are ad hoc signed)
