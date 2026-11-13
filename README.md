@@ -133,12 +133,6 @@ gh release create v0.1.1 build/Glint.zip --title "Glint 0.1.1"
 
 The installer always pulls `Glint.zip` from the latest release.
 
-## Status
-
-Checked by self-test and by rendering the app's own windows: capture, crop, all annotation tools, OCR, recording, GIF export, scroll stitching, full-page band detection, and the look of the widget, popup, settings and editor. The one-line install was run end to end on 2026-11-13.
-
-Not yet checked by hand: a real full-page capture in a browser, the middle-click trigger, hover name tags, dragging and pinning the widget, pin docking under the widget, the 30-second thumbnail dismiss, multi-monitor, Retina scaling, and the first-run permission prompt.
-
 ## Roadmap
 
 - Sticky footers and content sidebars in scrolling and full-page capture
