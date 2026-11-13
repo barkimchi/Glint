@@ -11,13 +11,23 @@ Capture an area, a window, a whole page or a video, then mark it up and drop it 
 
 ## Install
 
+Download the app and drag it into Applications:
+
+1. Download [Glint.zip](https://github.com/barkimchi/Glint/releases/latest/download/Glint.zip) (the latest release; older ones live under [Releases](https://github.com/barkimchi/Glint/releases)).
+2. Double-click the zip to unzip it, then drag `Glint.app` into your Applications folder and open it from there.
+3. Glint is not notarized with Apple yet, so on first launch macOS warns that it cannot verify the developer. Right-click (Control-click) Glint in Applications, choose Open, then confirm with Open. You only have to do this once; macOS remembers the choice. The quarantine flag stays in place - this is the supported way to open an app that is not notarized.
+
+Glint checks for updates on its own and offers to install them; the menu also has Check for Updates…. Updates are verified against Glint's Sparkle key before anything is installed. (Releases before v0.1.2 don't self-update: install the latest zip once to get onto the updater.)
+
+On first launch macOS asks for Screen Recording access; Glint shows a button that opens the right System Settings pane. Release builds are ad hoc signed (hardened runtime on, no debug entitlements), so macOS may ask for that access again after an update.
+
+Prefer the terminal? This does the same thing without a browser:
+
 ```bash
 npx github:barkimchi/glint-app
 ```
 
-That downloads the release pinned in this repo, puts `Glint.app` in `~/Applications` and opens it. Glint then checks for updates on its own and offers to install them; the menu also has Check for Updates…. (Releases before v0.1.2 don't self-update: run the `npx` line once more to get onto the updater.)
-
-You need Node for `npx`, nothing else. The installer verifies the download against the pinned release's checksum before installing anything, and never removes macOS's quarantine flag. On first launch macOS asks for Screen Recording access; Glint shows a button that opens the right System Settings pane. Release builds are ad hoc signed (hardened runtime on, no debug entitlements), so macOS may ask for that access again after an update. Glint is not yet notarized with Apple - that needs a Developer ID account and is on the roadmap.
+That downloads the release pinned in this repo, verifies it against the pinned checksum, puts `Glint.app` in `~/Applications` and opens it. You need Node for `npx`, nothing else.
 
 > "Glint" is a working name and has not been vetted yet.
 
