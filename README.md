@@ -17,7 +17,7 @@ npx github:barkimchi/glint-app
 
 That downloads the latest release, puts `Glint.app` in `~/Applications` and opens it. Glint then checks for updates on its own and offers to install them; the menu also has Check for Updates…. (Releases before v0.1.2 don't self-update: run the `npx` line once more to get onto the updater.)
 
-You need Node for `npx`, nothing else. On first launch macOS asks for Screen Recording access; Glint shows a button that opens the right System Settings pane. Release builds are ad hoc signed, so macOS may ask for that access again after an update.
+You need Node for `npx`, nothing else. The installer verifies the download against a checksum pinned in this repo before installing anything, and never removes macOS's quarantine flag. On first launch macOS asks for Screen Recording access; Glint shows a button that opens the right System Settings pane. Release builds are ad hoc signed (hardened runtime on, no debug entitlements), so macOS may ask for that access again after an update. Glint is not yet notarized with Apple - that needs a Developer ID account and is on the roadmap.
 
 > "Glint" is a working name and has not been vetted yet.
 
@@ -142,3 +142,4 @@ The installer always pulls `Glint.zip` from the latest release.
 - Custom app opens: choose which app the quick-open action launches, not just Claude
 - Shortcut selection in the middle-click popup (scope to settle: picking which actions appear, remapping keys from the popup, or both)
 - Clearer first run: permissions and where screenshots are saved
+- Apple Developer ID signing and notarization, so Gatekeeper can verify the app (needs a paid Apple Developer account)

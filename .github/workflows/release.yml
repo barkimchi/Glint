@@ -22,8 +22,21 @@ jobs:
         run: xcodegen
       - name: Build
         run: xcodebuild -project Glint.xcodeproj -scheme Glint -configuration Release -derivedDataPath build build
+      - name: Verify release hardening
+        run: |
+          APP=build/Build/Products/Release/Glint.app
+          if codesign -d --entitlements - --xml "$APP" 2>/dev/null | grep -q get-task-allow; then
+            echo "::error::Release build must not carry the get-task-allow entitlement"
+            exit 1
+          fi
+          if ! codesign -dv "$APP" 2>&1 | grep -q 'flags=.*runtime'; then
+            echo "::error::Release build must be signed with the hardened runtime flag"
+            exit 1
+          fi
       - name: Zip app
         run: ditto -c -k --keepParent build/Build/Products/Release/Glint.app build/Glint.zip
+      - name: Pin installer checksum
+        run: shasum -a 256 build/Glint.zip | awk '{print $1}' > bin/SHA256
       - name: Sign update
         env:
           SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
@@ -44,6 +57,6 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git fetch origin master
           git checkout -B appcast-publish origin/master
-          git add appcast.xml
-          git commit -m "Appcast entry for ${{ github.ref_name }}"
+          git add appcast.xml bin/SHA256
+          git commit -m "Appcast entry and installer checksum for ${{ github.ref_name }}"
           git push origin HEAD:master

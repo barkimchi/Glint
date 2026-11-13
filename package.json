@@ -1,9 +1,9 @@
 {
   "name": "glint-app",
-  "version": "0.1.0",
+  "version": "0.1.3",
   "private": true,
   "description": "Installer for Glint, a native macOS screenshot and screen recording tool.",
   "os": ["darwin"],
   "bin": { "glint-app": "bin/install.sh" },
-  "files": ["bin/install.sh"]
+  "files": ["bin/install.sh", "bin/SHA256"]
 }

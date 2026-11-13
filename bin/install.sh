@@ -5,6 +5,7 @@ set -euo pipefail
 
 REPO="barkimchi/glint-app"
 DEST="$HOME/Applications"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 [ "$(uname)" = "Darwin" ] || { echo "Glint is a macOS app."; exit 1; }
 
@@ -17,6 +18,18 @@ if ! curl -fsSL "https://github.com/$REPO/releases/latest/download/Glint.zip" -o
   command -v gh >/dev/null || { echo "Download failed. If the repo is private, install the GitHub CLI and run: gh auth login"; exit 1; }
   gh release download --repo "$REPO" --pattern "Glint.zip" --dir "$TMP" --clobber
 fi
+
+# Verify the download against the checksum pinned in this repo at release time.
+# This catches a release asset that doesn't match what the repo published; the
+# root of trust is this repository itself, fetched over HTTPS.
+PINNED="$(tr -d '[:space:]' < "$SCRIPT_DIR/SHA256")"
+ACTUAL="$(shasum -a 256 "$TMP/Glint.zip" | awk '{print $1}')"
+if [ "$ACTUAL" != "$PINNED" ]; then
+  echo "Checksum mismatch: the download does not match the release pinned in the repo." >&2
+  echo "If a release was published in the last few minutes, wait a moment and try again." >&2
+  exit 1
+fi
+
 ditto -x -k "$TMP/Glint.zip" "$TMP/app"
 [ -d "$TMP/app/Glint.app" ] || { echo "Download did not contain Glint.app"; exit 1; }
 
@@ -24,7 +37,6 @@ pkill -x Glint 2>/dev/null || true
 mkdir -p "$DEST"
 rm -rf "$DEST/Glint.app"
 ditto "$TMP/app/Glint.app" "$DEST/Glint.app"
-xattr -dr com.apple.quarantine "$DEST/Glint.app" 2>/dev/null || true
 open "$DEST/Glint.app"
 
 VERSION="$(defaults read "$DEST/Glint.app/Contents/Info" CFBundleShortVersionString 2>/dev/null || echo "?")"
