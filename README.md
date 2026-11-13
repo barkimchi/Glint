@@ -43,14 +43,14 @@ Every one of these has a keyboard shortcut, a button on the edge widget and a bu
 Press the middle mouse button anywhere and the actions appear under your pointer. Hover a button to see its name, click to fire it, click elsewhere to dismiss.
 
 <p align="center"><img src="docs/popup.png" alt="The middle-click popup: a four by two grid of capture buttons" width="520"></p>
-<p align="center"><sub>Captured with the previous icon set. Updated captures coming; regenerate locally with `Glint --shots`.</sub></p>
+<p align="center"><sub>Rendering of the popup with the current buttons.</sub></p>
 
 ### 2. The edge widget
 
 A thin tab that hugs the border of your screen. Hover and it opens into the same buttons; click the tab to pin it open. Drag the grip to park it on any edge of any display.
 
 <p align="center"><img src="docs/widget.png" alt="The edge widget, opened along the bottom edge of the screen" width="720"></p>
-<p align="center"><sub>Captured with the previous icon set. Updated captures coming; regenerate locally with `Glint --shots`.</sub></p>
+<p align="center"><sub>Rendering of the edge widget with the current buttons.</sub></p>
 
 ### 3. Keyboard shortcuts
 
@@ -68,7 +68,7 @@ A thin tab that hugs the border of your screen. Hover and it opens into the same
 Esc cancels any selection. Change or clear any shortcut in Settings: click it and press the new keys.
 
 <p align="center"><img src="docs/settings.png" alt="Glint Settings: shortcuts, recording options and save folder" width="380"></p>
-<p align="center"><sub>Captured with the previous default save folder; new installs default to Desktop/Glint Screenshots.</sub></p>
+<p align="center"><sub>Rendering; new installs default to Desktop/Glint Screenshots.</sub></p>
 <p align="center"><sub>Settings, shown here with customised shortcuts.</sub></p>
 
 ## After the capture
