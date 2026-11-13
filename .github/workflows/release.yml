@@ -63,16 +63,21 @@ jobs:
         run: |
           set -euo pipefail
           APP=build/Build/Products/Release/Glint.app
-          if codesign -d --entitlements - --xml "$APP" 2>/dev/null | grep -q get-task-allow; then
+          # Capture before grepping: grep -q in a pipeline can SIGPIPE codesign
+          # and pipefail then reports a spurious failure.
+          INFO="$(codesign -dv "$APP" 2>&1)"
+          ENT="$(codesign -d --entitlements - --xml "$APP" 2>/dev/null || true)"
+          if grep -q get-task-allow <<<"$ENT"; then
             echo "::error::Release build must not carry the get-task-allow entitlement"
             exit 1
           fi
-          if ! codesign -dv "$APP" 2>&1 | grep -q 'flags=.*runtime'; then
+          if ! grep -q 'flags=.*runtime' <<<"$INFO"; then
             echo "::error::Release build must be signed with the hardened runtime flag"
             exit 1
           fi
-          if ! codesign -dv "$APP" 2>&1 | grep -q "Authority=$SIGN_IDENTITY"; then
+          if ! grep -qF "Authority=$SIGN_IDENTITY" <<<"$INFO"; then
             echo "::error::Release build must carry the Developer ID Application authority"
+            grep '^Authority=' <<<"$INFO" || true
             exit 1
           fi
           codesign --verify --deep --strict "$APP"
