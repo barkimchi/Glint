@@ -1,4 +1,8 @@
 name: Glint
+packages:
+  Sparkle:
+    url: https://github.com/sparkle-project/Sparkle
+    from: 2.10.1
 options:
   bundleIdPrefix: com.barkimchi
   deploymentTarget:
@@ -8,6 +12,8 @@ targets:
     type: application
     platform: macOS
     sources: [Sources]
+    dependencies:
+      - package: Sparkle
     configFiles:
       Debug: Config/Signing.xcconfig
       Release: Config/Signing.xcconfig
@@ -16,8 +22,11 @@ targets:
       properties:
         LSUIElement: true
         CFBundleDisplayName: Glint
-        CFBundleShortVersionString: "0.1.1"
-        CFBundleVersion: "1"
+        CFBundleShortVersionString: "0.1.2"
+        CFBundleVersion: "2"
+        SUFeedURL: "https://raw.githubusercontent.com/barkimchi/glint-app/master/appcast.xml"
+        SUPublicEDKey: "oBidFPnsI1gc/DkdrkZRbErsCahlrjdRDibpGgw2iEo="
+        SUEnableAutomaticChecks: true
         NSMicrophoneUsageDescription: "Glint records your microphone only when you turn on microphone audio for screen recordings."
         NSHumanReadableCopyright: "Copyright 2026 Bar Kimchi"
     settings:

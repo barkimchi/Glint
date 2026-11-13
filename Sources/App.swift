@@ -3,6 +3,7 @@ import ApplicationServices
 import Carbon.HIToolbox
 import ScreenCaptureKit
 import ServiceManagement
+import Sparkle
 
 @main
 @MainActor
@@ -47,6 +48,7 @@ final class AppController: NSObject, NSMenuDelegate {
     private var clickOverlay: ClickOverlay?
     private var recordTimer: Timer?
     private var recordStart = Date()
+    private let updaterController = SPUStandardUpdaterController(startingUpdater: true, updaterDelegate: nil, userDriverDelegate: nil)
 
     func start() {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
@@ -124,6 +126,9 @@ final class AppController: NSObject, NSMenuDelegate {
         if !CGPreflightScreenCaptureAccess() {
             menu.addItem(item("Grant Screen Recording Access…", nil, #selector(askPermission)))
         }
+        let updates = NSMenuItem(title: "Check for Updates…", action: #selector(SPUStandardUpdaterController.checkForUpdates(_:)), keyEquivalent: "")
+        updates.target = updaterController
+        menu.addItem(updates)
         menu.addItem(.separator())
         menu.addItem(NSMenuItem(title: "Quit Glint", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
     }
