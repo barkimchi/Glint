@@ -3,8 +3,26 @@ import AVFoundation
 import ApplicationServices
 import Carbon.HIToolbox
 import SwiftUI
+import UniformTypeIdentifiers
 
 /// Every action that can have a global shortcut.
+/// The app the "Go to" action opens. Claude by default; any installed app can be chosen in Settings.
+enum AppTarget {
+    static let claudeID = "com.anthropic.claudefordesktop"
+    static var bundleID: String {
+        get { UserDefaults.standard.string(forKey: "app.target") ?? claudeID }
+        set { UserDefaults.standard.set(newValue == claudeID ? nil : newValue, forKey: "app.target") }
+    }
+    static var isClaude: Bool { bundleID == claudeID }
+    static var url: URL? { NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID) }
+    static var name: String {
+        if isClaude { return "Claude" }
+        guard let u = url else { return "App" }
+        return FileManager.default.displayName(atPath: u.path).replacingOccurrences(of: ".app", with: "")
+    }
+    static var icon: NSImage? { url.map { NSWorkspace.shared.icon(forFile: $0.path) } }
+}
+
 enum HotkeyAction: String, CaseIterable, Identifiable, Codable {
     case area, window, fullscreen, scroll, page, ocr, record, claude
     var id: String { rawValue }
@@ -17,7 +35,7 @@ enum HotkeyAction: String, CaseIterable, Identifiable, Codable {
         case .page: return "Capture Full Page"
         case .ocr: return "Grab Text (OCR)"
         case .record: return "Record Screen"
-        case .claude: return "Go to Claude"
+        case .claude: return "Go to \(AppTarget.name)"
         }
     }
     var symbol: String {
@@ -202,6 +220,8 @@ struct SettingsView: View {
     @State private var systemAudio = RecordingSettings.systemAudio
     @State private var microphone = RecordingSettings.microphone
     @State private var micDenied = AVCaptureDevice.authorizationStatus(for: .audio) == .denied
+    @State private var appName = AppTarget.name
+    @State private var appIcon = AppTarget.icon
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -227,6 +247,14 @@ struct SettingsView: View {
             HStack {
                 Button("Restore Default Shortcuts") { stopRecording(); settings.resetAll(); message = "Defaults restored." }
                 Spacer()
+            }
+            HStack(spacing: 8) {
+                Text("Go-to button opens").frame(width: 150, alignment: .leading)
+                if let appIcon { Image(nsImage: appIcon).resizable().frame(width: 20, height: 20) }
+                Text(appName).fontWeight(.medium)
+                Spacer()
+                Button("Choose App…") { chooseApp() }
+                if appName != "Claude" { Button("Use Claude") { setApp(AppTarget.claudeID) } }
             }
             Divider()
             Text("Recording").font(.headline)
@@ -293,6 +321,24 @@ struct SettingsView: View {
         .padding(20)
         .frame(width: 460)
         .onDisappear { stopRecording() }
+    }
+
+    private func chooseApp() {
+        let panel = NSOpenPanel()
+        panel.allowedContentTypes = [.application]
+        panel.directoryURL = URL(fileURLWithPath: "/Applications")
+        panel.prompt = "Choose"
+        panel.message = "Pick the app the Go-to button and its shortcut should open."
+        guard panel.runModal() == .OK, let url = panel.url, let id = Bundle(url: url)?.bundleIdentifier else { return }
+        setApp(id)
+    }
+
+    private func setApp(_ id: String) {
+        AppTarget.bundleID = id
+        appName = AppTarget.name
+        appIcon = AppTarget.icon
+        EdgeWidget.reload()
+        ActionRing.close()
     }
 
     private func startRecording(_ a: HotkeyAction) {

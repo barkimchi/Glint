@@ -52,24 +52,39 @@ enum MiddleClick {
     private static func reenable() { if let t = tap { CGEvent.tapEnable(tap: t, enable: true) } }
 }
 
+/// Which actions the popup shows, in order. Edited in place: long-press any button.
+enum RingLayout {
+    static var actions: [HotkeyAction] {
+        get {
+            guard let raw = UserDefaults.standard.stringArray(forKey: "ring.order") else { return HotkeyAction.allCases }
+            var seen = Set<HotkeyAction>()
+            return raw.compactMap(HotkeyAction.init(rawValue:)).filter { seen.insert($0).inserted }
+        }
+        set { UserDefaults.standard.set(newValue.map(\.rawValue), forKey: "ring.order") }
+    }
+    static var hidden: [HotkeyAction] { HotkeyAction.allCases.filter { !actions.contains($0) } }
+}
+
 @MainActor
 enum ActionRing {
     private static var panel: NSPanel?
     private static var outside: Any?
     static let cols = 4, tile: CGFloat = 52, gap: CGFloat = 8, tipSpace: CGFloat = 30
-    static var size: NSSize {
-        let rows = CGFloat((HotkeyAction.allCases.count + cols - 1) / cols)
+
+    static func size(slots: Int) -> NSSize {
+        let rows = CGFloat(max(1, (slots + cols - 1) / cols))
         return NSSize(width: CGFloat(cols) * tile + CGFloat(cols - 1) * gap,
                       height: rows * tile + (rows - 1) * gap + tipSpace * 2)
     }
 
+    static var isOpen: Bool { panel != nil }
     static func toggle() { panel == nil ? show() : close() }
 
     static func show() {
         guard SelectionSession.active == nil else { return }
         let m = NSEvent.mouseLocation
         let scr = NSScreen.screens.first { NSMouseInRect(m, $0.frame, false) } ?? NSScreen.main
-        let size = self.size
+        let size = self.size(slots: RingLayout.actions.count)
         var o = NSPoint(x: m.x - size.width / 2, y: m.y - size.height / 2)
         if let f = scr?.frame {
             o.x = min(max(o.x, f.minX + 4), f.maxX - size.width - 4)
@@ -91,10 +106,30 @@ enum ActionRing {
         }
     }
 
+    /// Grows or shrinks the panel for a new number of slots, keeping its top edge where it is.
+    static func resize(slots: Int) {
+        guard let p = panel else { return }
+        let s = size(slots: slots)
+        var f = p.frame
+        f.origin.y += f.height - s.height
+        f.size = s
+        p.setFrame(f, display: true)
+    }
+
     static func close() {
+        (panel?.contentView as? RingView)?.endEditing(save: true)
         panel?.orderOut(nil); panel = nil
         if let o = outside { NSEvent.removeMonitor(o); outside = nil }
     }
+
+    /// Opens the popup straight into edit mode (used by --ring-edit for screenshots).
+    static func showEditing() {
+        show()
+        (panel?.contentView as? RingView)?.beginEditingFromOutside()
+    }
+
+    static var frame: NSRect? { panel?.frame }
+    fileprivate static var view: RingView? { panel?.contentView as? RingView }
 
     static func fire(_ a: HotkeyAction) {
         close()
@@ -102,61 +137,316 @@ enum ActionRing {
     }
 }
 
-private final class RingButton: NSButton {
-    var onHover: ((Bool) -> Void)?
-    override func updateTrackingAreas() {
-        trackingAreas.forEach(removeTrackingArea)
-        addTrackingArea(NSTrackingArea(rect: bounds, options: [.mouseEnteredAndExited, .activeAlways], owner: self))
-    }
-    override func mouseEntered(with event: NSEvent) { onHover?(true) }
-    override func mouseExited(with event: NSEvent) { onHover?(false) }
-    override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
-}
-
+/// The popup. Tiles are layers so they can wobble and slide. Long-press any tile to edit:
+/// drag to reorder, the minus badge removes, the plus tile adds from the actions not shown.
 private final class RingView: NSView {
-    private var hot: Int? { didSet { needsDisplay = true } }
-    private var centers: [NSPoint] = []
+    private var items = RingLayout.actions
+    private var tiles: [CALayer] = [] // parallel to items
+    private var plus: CALayer?
+    private var editing = false
+    private var hot: Int? { didSet { if hot != oldValue { needsDisplay = true; refreshTiles() } } }
+    private var pressTimer: Timer?
+    private var pressIndex: Int?
+    private var dragging: (index: Int, grab: NSPoint)?
+    private var pressedPlus = false
 
     override init(frame: NSRect) {
         super.init(frame: frame)
-        let all = HotkeyAction.allCases
-        let cols = ActionRing.cols, rows = Int(ceil(Double(all.count) / Double(cols)))
-        let step = ActionRing.tile + ActionRing.gap
-        for (i, a) in all.enumerated() {
-            let col = i % cols, row = i / cols
-            let p = NSPoint(x: ActionRing.tile / 2 + CGFloat(col) * step,
-                            y: ActionRing.tipSpace + ActionRing.tile / 2 + CGFloat(rows - 1 - row) * step)
-            centers.append(p)
-            let b = RingButton(image: EdgeGlyph.image(a), target: self, action: #selector(fire(_:)))
-            b.tag = i
-            b.isBordered = false
-            b.imageScaling = .scaleNone
-            b.setAccessibilityLabel(a.title)
-            b.frame = NSRect(x: p.x - 23, y: p.y - 23, width: 46, height: 46)
-            b.onHover = { [weak self] inside in
-                guard let self else { return }
-                if inside { self.hot = i } else if self.hot == i { self.hot = nil }
-            }
-            addSubview(b)
-        }
+        wantsLayer = true
+        layer?.masksToBounds = false
+        for a in items { tiles.append(makeTile(a)) }
+        layoutTiles(animated: false)
+        setAccessibilityRole(.group)
     }
     required init?(coder: NSCoder) { fatalError() }
 
+    override var isFlipped: Bool { false }
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
-    override func mouseDown(with event: NSEvent) { ActionRing.close() }
+    override func updateTrackingAreas() {
+        trackingAreas.forEach(removeTrackingArea)
+        addTrackingArea(NSTrackingArea(rect: bounds, options: [.mouseMoved, .mouseEnteredAndExited, .activeAlways, .inVisibleRect],
+                                       owner: self))
+    }
+
+    // MARK: Geometry
+
+    private var slots: Int { items.count + (editing ? 1 : 0) }
+    private var rows: Int { max(1, (slots + ActionRing.cols - 1) / ActionRing.cols) }
+
+    private func center(_ i: Int) -> NSPoint {
+        let step = ActionRing.tile + ActionRing.gap
+        let col = i % ActionRing.cols, row = i / ActionRing.cols
+        return NSPoint(x: ActionRing.tile / 2 + CGFloat(col) * step,
+                       y: ActionRing.tipSpace + ActionRing.tile / 2 + CGFloat(rows - 1 - row) * step)
+    }
+
+    private func slot(at p: NSPoint) -> Int? {
+        let t = ActionRing.tile / 2
+        return (0..<slots).first { i in let c = center(i); return abs(p.x - c.x) <= t && abs(p.y - c.y) <= t }
+    }
+
+    /// Nearest item slot to a point, for dropping a dragged tile.
+    private func nearestItemSlot(_ p: NSPoint) -> Int {
+        (0..<items.count).min { a, b in
+            let ca = center(a), cb = center(b)
+            return hypot(ca.x - p.x, ca.y - p.y) < hypot(cb.x - p.x, cb.y - p.y)
+        } ?? 0
+    }
+
+    private var doneBox: NSRect {
+        let w: CGFloat = 64, h: CGFloat = 22
+        return NSRect(x: bounds.midX - w / 2, y: (ActionRing.tipSpace - h) / 2, width: w, height: h)
+    }
+
+    // MARK: Tiles
+
+    private func makeTile(_ a: HotkeyAction) -> CALayer {
+        let l = CALayer()
+        l.bounds = CGRect(x: 0, y: 0, width: ActionRing.tile, height: ActionRing.tile)
+        l.cornerRadius = 13
+        l.backgroundColor = EdgeGlyph.paper.withAlphaComponent(0.9).cgColor
+        l.contents = EdgeGlyph.image(a)
+        l.contentsGravity = .center
+        l.contentsScale = window?.backingScaleFactor ?? NSScreen.main?.backingScaleFactor ?? 2
+        let badge = CALayer() // remove badge, shown while editing
+        badge.name = "badge"
+        badge.bounds = CGRect(x: 0, y: 0, width: 18, height: 18)
+        badge.position = CGPoint(x: 3, y: ActionRing.tile - 3)
+        badge.cornerRadius = 9
+        badge.backgroundColor = NSColor(white: 0.15, alpha: 0.95).cgColor
+        badge.borderColor = NSColor.white.withAlphaComponent(0.85).cgColor
+        badge.borderWidth = 1
+        let bar = CALayer()
+        bar.bounds = CGRect(x: 0, y: 0, width: 8, height: 2)
+        bar.position = CGPoint(x: 9, y: 9)
+        bar.backgroundColor = NSColor.white.cgColor
+        bar.cornerRadius = 1
+        badge.addSublayer(bar)
+        badge.isHidden = true
+        l.addSublayer(badge)
+        layer?.addSublayer(l)
+        return l
+    }
+
+    private func makePlus() -> CALayer {
+        let l = CALayer()
+        l.bounds = CGRect(x: 0, y: 0, width: ActionRing.tile, height: ActionRing.tile)
+        l.cornerRadius = 13
+        l.backgroundColor = NSColor(white: 0.2, alpha: 0.75).cgColor
+        l.borderColor = NSColor.white.withAlphaComponent(0.35).cgColor
+        l.borderWidth = 1.5
+        for (w, h) in [(18.0, 2.6), (2.6, 18.0)] {
+            let b = CALayer()
+            b.bounds = CGRect(x: 0, y: 0, width: w, height: h)
+            b.position = CGPoint(x: ActionRing.tile / 2, y: ActionRing.tile / 2)
+            b.backgroundColor = NSColor.white.withAlphaComponent(RingLayout.hidden.isEmpty ? 0.3 : 0.9).cgColor
+            b.cornerRadius = 1.3
+            l.addSublayer(b)
+        }
+        layer?.addSublayer(l)
+        return l
+    }
+
+    private func refreshTiles() {
+        CATransaction.begin(); CATransaction.setDisableActions(true)
+        for (i, l) in tiles.enumerated() {
+            let lit = !editing && i == hot
+            l.backgroundColor = (lit ? NSColor(white: 0.42, alpha: 0.96) : EdgeGlyph.paper.withAlphaComponent(0.9)).cgColor
+            l.sublayers?.first { $0.name == "badge" }?.isHidden = !editing
+        }
+        CATransaction.commit()
+    }
+
+    private func layoutTiles(animated: Bool) {
+        CATransaction.begin()
+        CATransaction.setDisableActions(!animated)
+        CATransaction.setAnimationDuration(0.18)
+        for (i, l) in tiles.enumerated() where dragging?.index != i { l.position = center(i) }
+        plus?.position = center(items.count)
+        CATransaction.commit()
+        needsDisplay = true
+    }
+
+    private func wobble(_ l: CALayer, _ i: Int) {
+        let a = CAKeyframeAnimation(keyPath: "transform.rotation.z")
+        let d = 0.035 // about 2 degrees
+        a.values = [-d, d, -d]
+        a.duration = 0.26 + Double(i % 3) * 0.02
+        a.repeatCount = .infinity
+        a.timeOffset = Double(i) * 0.07
+        l.add(a, forKey: "wobble")
+    }
+
+    // MARK: Editing
+
+    private func beginEditing() {
+        guard !editing else { return }
+        editing = true
+        hot = nil
+        ActionRing.resize(slots: slots)
+        plus = makePlus()
+        layoutTiles(animated: false)
+        for (i, l) in tiles.enumerated() { wobble(l, i) }
+        refreshTiles()
+    }
+
+    func beginEditingFromOutside() { beginEditing() }
+    // Test hooks for RingSelfTest.
+    var testEditing: Bool { editing }
+    func testCenter(_ i: Int) -> NSPoint { center(i) }
+    var testDone: NSRect { doneBox }
+    func testAdd(_ a: HotkeyAction) { add(a) }
+
+    func endEditing(save: Bool) {
+        guard editing else { return }
+        editing = false
+        if save { RingLayout.actions = items }
+        tiles.forEach { $0.removeAnimation(forKey: "wobble") }
+        plus?.removeFromSuperlayer(); plus = nil
+        ActionRing.resize(slots: slots)
+        layoutTiles(animated: false)
+        refreshTiles()
+    }
+
+    private func remove(_ i: Int) {
+        guard items.count > 1 else { Toast.show("Keep at least one button in the popup"); return }
+        items.remove(at: i)
+        tiles[i].removeFromSuperlayer()
+        tiles.remove(at: i)
+        rebuildPlus()
+        settle()
+    }
+
+    private func add(_ a: HotkeyAction) {
+        items.append(a)
+        let l = makeTile(a)
+        tiles.append(l)
+        rebuildPlus()
+        settle()
+        wobble(l, tiles.count - 1)
+    }
+
+    private func rebuildPlus() { plus?.removeFromSuperlayer(); plus = makePlus() }
+
+    /// After a change in count: resize the panel, then lay out.
+    private func settle() {
+        RingLayout.actions = items
+        ActionRing.resize(slots: slots)
+        layoutTiles(animated: false)
+        refreshTiles()
+    }
+
+    @objc private func addFromMenu(_ m: NSMenuItem) {
+        if let a = HotkeyAction(rawValue: m.representedObject as? String ?? "") { add(a) }
+    }
+
+    private func showLibrary(at p: NSPoint) {
+        let menu = NSMenu()
+        let hidden = RingLayout.hidden.filter { !items.contains($0) }
+        if hidden.isEmpty {
+            menu.addItem(withTitle: "Every action is already in the popup", action: nil, keyEquivalent: "").isEnabled = false
+        }
+        for a in hidden {
+            let it = menu.addItem(withTitle: a.title, action: #selector(addFromMenu(_:)), keyEquivalent: "")
+            it.target = self
+            it.representedObject = a.rawValue
+            let img = EdgeGlyph.image(a); img.size = NSSize(width: 22, height: 22)
+            it.image = img
+        }
+        menu.popUp(positioning: nil, at: p, in: self)
+    }
+
+    // MARK: Mouse
+
+    override func mouseMoved(with event: NSEvent) {
+        guard !editing else { return }
+        let p = convert(event.locationInWindow, from: nil)
+        hot = slot(at: p).flatMap { $0 < items.count ? $0 : nil }
+    }
+    override func mouseExited(with event: NSEvent) { if !editing { hot = nil } }
+
+    override func mouseDown(with event: NSEvent) {
+        let p = convert(event.locationInWindow, from: nil)
+        if editing {
+            if doneBox.contains(p) { endEditing(save: true); return }
+            guard let i = slot(at: p) else { endEditing(save: true); return }
+            if i == items.count { pressedPlus = true; return }
+            let c = center(i)
+            // Minus badge: the tile's top-left corner.
+            if hypot(p.x - (c.x - ActionRing.tile / 2 + 3), p.y - (c.y + ActionRing.tile / 2 - 3)) <= 12 { remove(i); return }
+            dragging = (i, NSPoint(x: p.x - c.x, y: p.y - c.y))
+            tiles[i].zPosition = 10
+            return
+        }
+        guard let i = slot(at: p), i < items.count else { ActionRing.close(); return }
+        pressIndex = i
+        pressTimer?.invalidate()
+        pressTimer = Timer.scheduledTimer(withTimeInterval: 0.45, repeats: false) { [weak self] _ in
+            MainActor.assumeIsolated {
+                guard let self, self.pressIndex != nil else { return }
+                self.pressIndex = nil
+                self.beginEditing()
+            }
+        }
+    }
+
+    override func mouseDragged(with event: NSEvent) {
+        guard editing, let d = dragging else { return }
+        let p = convert(event.locationInWindow, from: nil)
+        CATransaction.begin(); CATransaction.setDisableActions(true)
+        tiles[d.index].position = CGPoint(x: p.x - d.grab.x, y: p.y - d.grab.y)
+        CATransaction.commit()
+        let target = nearestItemSlot(NSPoint(x: p.x - d.grab.x, y: p.y - d.grab.y))
+        if target != d.index {
+            let a = items.remove(at: d.index); items.insert(a, at: target)
+            let l = tiles.remove(at: d.index); tiles.insert(l, at: target)
+            dragging = (target, d.grab)
+            layoutTiles(animated: true)
+        }
+    }
+
+    override func mouseUp(with event: NSEvent) {
+        let p = convert(event.locationInWindow, from: nil)
+        if editing {
+            if pressedPlus {
+                pressedPlus = false
+                if slot(at: p) == items.count { showLibrary(at: center(items.count)) }
+                return
+            }
+            if let d = dragging {
+                tiles[d.index].zPosition = 0
+                dragging = nil
+                RingLayout.actions = items
+                layoutTiles(animated: true)
+            }
+            return
+        }
+        pressTimer?.invalidate()
+        if let i = pressIndex {
+            pressIndex = nil
+            if slot(at: p) == i { ActionRing.fire(items[i]) }
+        }
+    }
+
+    // MARK: Drawing (name tag, or the Done button while editing)
 
     override func draw(_ dirtyRect: NSRect) {
-        let t = ActionRing.tile
-        for (i, p) in centers.enumerated() { // each button sits on its own small tile; there is no shared plate
-            let r = NSBezierPath(roundedRect: NSRect(x: p.x - t / 2, y: p.y - t / 2, width: t, height: t), xRadius: 13, yRadius: 13)
-            (i == hot ? NSColor(white: 0.42, alpha: 0.96) : EdgeGlyph.paper.withAlphaComponent(0.9)).setFill()
-            r.fill()
+        if editing {
+            let box = doneBox
+            NSColor.white.withAlphaComponent(0.92).setFill()
+            NSBezierPath(roundedRect: box, xRadius: 11, yRadius: 11).fill()
+            let s = NSAttributedString(string: "Done", attributes: [
+                .font: NSFont.systemFont(ofSize: 12, weight: .semibold), .foregroundColor: NSColor.black])
+            let z = s.size()
+            s.draw(at: NSPoint(x: box.midX - z.width / 2, y: box.midY - z.height / 2))
+            return
         }
-        guard let h = hot else { return }
+        guard let h = hot, h < items.count else { return }
+        let t = ActionRing.tile
         // Name tag: above the top row, below the bottom row, so it never covers another button.
-        let s = NSAttributedString(string: HotkeyAction.allCases[h].title, attributes: [
+        let s = NSAttributedString(string: items[h].title, attributes: [
             .font: NSFont.systemFont(ofSize: 11.5, weight: .semibold), .foregroundColor: NSColor.white])
-        let z = s.size(), p = centers[h]
+        let z = s.size(), p = center(h)
         let w = z.width + 16, hgt: CGFloat = 22
         let top = h < ActionRing.cols
         var box = NSRect(x: p.x - w / 2, y: top ? p.y + t / 2 + 5 : p.y - t / 2 - 5 - hgt, width: w, height: hgt)
@@ -165,6 +455,51 @@ private final class RingView: NSView {
         NSBezierPath(roundedRect: box, xRadius: 6, yRadius: 6).fill()
         s.draw(at: NSPoint(x: box.minX + 8, y: box.midY - z.height / 2))
     }
+}
 
-    @objc private func fire(_ b: NSButton) { ActionRing.fire(HotkeyAction.allCases[b.tag]) }
+/// `--ring-selftest`: drives the popup with synthetic mouse events (long press, drag, remove, add)
+/// and logs the saved order after each step to /tmp/glint-scrolltest.log. Restores the user's order.
+@MainActor
+enum RingSelfTest {
+    static func run() {
+        let saved = UserDefaults.standard.stringArray(forKey: "ring.order")
+        UserDefaults.standard.removeObject(forKey: "ring.order")
+        ActionRing.show()
+        guard let v = ActionRing.view, let w = v.window else { ScrollTest.log("ring: no view"); NSApp.terminate(nil); return }
+        func ev(_ t: NSEvent.EventType, _ p: NSPoint) -> NSEvent {
+            NSEvent.mouseEvent(with: t, location: v.convert(p, to: nil), modifierFlags: [], timestamp: ProcessInfo.processInfo.systemUptime,
+                               windowNumber: w.windowNumber, context: nil, eventNumber: 0, clickCount: 1, pressure: 1)!
+        }
+        func order() -> String { RingLayout.actions.map(\.rawValue).joined(separator: ",") }
+        var c0 = v.testCenter(0), c1 = NSPoint.zero, c3 = NSPoint.zero
+        ScrollTest.log("ring start:", order(), "editing:", v.testEditing)
+        v.mouseDown(with: ev(.leftMouseDown, c0)) // long press on tile 0
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.7) {
+            ScrollTest.log("after long press, editing:", v.testEditing, "panel h:", Int(w.frame.height))
+            v.mouseUp(with: ev(.leftMouseUp, c0))
+            c0 = v.testCenter(0); c1 = v.testCenter(1); c3 = v.testCenter(3) // edit mode adds a row
+            // Drag tile 0 onto slot 3.
+            v.mouseDown(with: ev(.leftMouseDown, c0))
+            for k in 1...6 {
+                let t = CGFloat(k) / 6
+                v.mouseDragged(with: ev(.leftMouseDragged, NSPoint(x: c0.x + (c3.x - c0.x) * t, y: c0.y + (c3.y - c0.y) * t)))
+            }
+            v.mouseUp(with: ev(.leftMouseUp, c3))
+            ScrollTest.log("after drag 0->3:", order())
+            // Tap the minus badge of tile 1.
+            let badge = NSPoint(x: c1.x - ActionRing.tile / 2 + 3, y: c1.y + ActionRing.tile / 2 - 3)
+            v.mouseDown(with: ev(.leftMouseDown, badge)); v.mouseUp(with: ev(.leftMouseUp, badge))
+            ScrollTest.log("after remove 1:", order(), "hidden:", RingLayout.hidden.map(\.rawValue).joined(separator: ","))
+            v.testAdd(RingLayout.hidden[0])
+            ScrollTest.log("after add:", order(), "panel h:", Int(w.frame.height))
+            // Done.
+            let done = v.testDone
+            v.mouseDown(with: ev(.leftMouseDown, NSPoint(x: done.midX, y: done.midY)))
+            ScrollTest.log("after done, editing:", v.testEditing, "panel h:", Int(w.frame.height), "saved:", order())
+            ActionRing.close()
+            if let saved { UserDefaults.standard.set(saved, forKey: "ring.order") } else { UserDefaults.standard.removeObject(forKey: "ring.order") }
+            ScrollTest.log("restored:", order())
+            NSApp.terminate(nil)
+        }
+    }
 }

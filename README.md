@@ -40,7 +40,7 @@ That downloads the release pinned in this repo, verifies it against the pinned c
 | **Capture a full page** | Click a window and Glint scrolls it top to bottom for you, keeping toolbars and sticky headers once. |
 | **Grab text** | Drag over anything on screen and the text lands on your clipboard. Reads QR codes too. |
 | **Record the screen** | An area or the whole display, to MP4, with optional click rings, keystrokes, system audio and microphone. One click turns it into a GIF. |
-| **Go to Claude** | Jumps straight to the Claude desktop app. |
+| **Go to Claude** | Jumps straight to the Claude desktop app, or any app you pick in Settings (the button then shows that app's icon). |
 
 Every one of these has a keyboard shortcut, a button on the edge widget and a button in the middle-click popup.
 
@@ -49,6 +49,8 @@ Every one of these has a keyboard shortcut, a button on the edge widget and a bu
 ### 1. The middle-click popup
 
 Press the middle mouse button anywhere and the actions appear under your pointer. Hover a button to see its name, click to fire it, click elsewhere to dismiss.
+
+Long-press any button to edit the popup: the buttons wiggle, drag one to reorder, tap its minus badge to remove it, or tap the plus tile to add an action back from the library. Click Done (or anywhere outside) to save.
 
 <p align="center"><img src="docs/popup.png" alt="The middle-click popup: a four by two grid of capture buttons" width="520"></p>
 <p align="center"><sub>Rendering of the popup with the current buttons.</sub></p>
@@ -141,6 +143,4 @@ The release workflow (`.github/workflows/release.yml`) builds on a macOS runner,
 - Moving and editing annotations after they are placed
 - Background and padding for window shots
 - Hide desktop icons while capturing
-- Custom app opens: choose which app the quick-open action launches, not just Claude
-- Shortcut selection in the middle-click popup (scope to settle: picking which actions appear, remapping keys from the popup, or both)
 - Clearer first run: permissions and where screenshots are saved

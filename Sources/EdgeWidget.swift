@@ -51,6 +51,12 @@ enum EdgeWidget {
     }
 
     static func hide() { panel?.orderOut(nil) }
+    /// Rebuilds the buttons, e.g. after the Go-to app changes.
+    static func reload() {
+        guard let p = panel else { return }
+        p.contentView = EdgeWidgetView()
+        place(expanded: false)
+    }
     static var isVisible: Bool { panel?.isVisible ?? false }
 
     static let thickness: (collapsed: CGFloat, expanded: CGFloat) = (8, 54)
@@ -214,7 +220,12 @@ enum EdgeGlyph {
     /// Action glyphs: one distinct mark per action. No shared capture brackets -
     /// they made the buttons hard to tell apart at a glance.
     static func image(_ a: HotkeyAction) -> NSImage {
-        NSImage(size: NSSize(width: 36, height: 36), flipped: false) { _ in
+        if a == .claude, !AppTarget.isClaude, let icon = AppTarget.icon { // a chosen app shows its own icon
+            return NSImage(size: NSSize(width: 36, height: 36), flipped: false) { r in
+                icon.draw(in: r.insetBy(dx: 2, dy: 2)); return true
+            }
+        }
+        return NSImage(size: NSSize(width: 36, height: 36), flipped: false) { _ in
             ink.setStroke()
             let w = NSBezierPath()
             w.lineWidth = 2.6; w.lineCapStyle = .round; w.lineJoinStyle = .round

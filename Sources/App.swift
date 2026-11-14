@@ -25,6 +25,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         AppController.shared.start()
         if args.contains("--settings") { SettingsWindow.show() }
         if args.contains("--ring-open") { ActionRing.show() } // for screenshots of the ring
+        if args.contains("--ring-selftest") { RingSelfTest.run() }
+        if args.contains("--ring-edit") { // for screenshots of the ring's edit mode; logs the panel frame
+            ActionRing.showEditing()
+            if let f = ActionRing.frame { ScrollTest.log("ring frame", Int(f.minX), Int(f.minY), Int(f.width), Int(f.height)) }
+        }
         if args.contains("--widget-open") { EdgeWidget.place(expanded: true) } // for screenshots of the widget
         if let i = args.firstIndex(of: "--edit"), i + 1 < args.count {
             EditorWindow.open(URL(fileURLWithPath: args[i + 1])) // handy for testing the editor
@@ -160,11 +165,9 @@ final class AppController: NSObject, NSMenuDelegate {
     @objc func captureArea() { select(.area) }
     @objc func captureWindow() { select(.window) }
     @objc func grabText() { select(.ocr) }
-    /// Brings the Claude desktop app's window to the front, launching it if needed.
+    /// Brings the chosen app (Claude unless changed in Settings) to the front, launching it if needed.
     @objc func goToClaude() {
-        guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.anthropic.claudefordesktop") else {
-            Toast.show("Claude desktop app not found"); return
-        }
+        guard let url = AppTarget.url else { Toast.show("\(AppTarget.name) not found"); return }
         let cfg = NSWorkspace.OpenConfiguration()
         cfg.activates = true
         NSWorkspace.shared.openApplication(at: url, configuration: cfg)
