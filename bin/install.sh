@@ -5,7 +5,15 @@ set -euo pipefail
 
 REPO="barkimchi/glint-app"
 DEST="$HOME/Applications"
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# npx runs this through a symlink in node_modules/.bin, so follow links to the
+# real file first; RELEASE and SHA256 sit next to it, not next to the link.
+SOURCE="${BASH_SOURCE[0]}"
+while [ -L "$SOURCE" ]; do
+  LINK_DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
+  SOURCE="$(readlink "$SOURCE")"
+  [[ "$SOURCE" != /* ]] && SOURCE="$LINK_DIR/$SOURCE"
+done
+SCRIPT_DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
 
 [ "$(uname)" = "Darwin" ] || { echo "Glint is a macOS app."; exit 1; }
 
