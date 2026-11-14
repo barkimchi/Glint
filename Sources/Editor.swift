@@ -433,11 +433,13 @@ struct EditorView: View {
 
 @MainActor
 enum EditorWindow {
+    static var lastModel: EditorModel? // for --demo
     private static var open: [NSWindow] = []
 
     static func open(_ url: URL) {
         guard let cg = Store.cgImage(url) else { return }
         let model = EditorModel(image: cg)
+        lastModel = model
         let scale = NSScreen.main?.backingScaleFactor ?? 2
         let vf = NSScreen.main?.visibleFrame ?? NSRect(x: 0, y: 0, width: 1440, height: 900)
         let w = min(max(CGFloat(cg.width) / scale + 40, 860), vf.width * 0.85)

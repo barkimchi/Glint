@@ -134,9 +134,9 @@ enum ActionRing {
     static var isOpen: Bool { panel != nil }
     static func toggle() { panel == nil ? show() : close() }
 
-    static func show() {
+    static func show(at point: NSPoint? = nil) {
         guard SelectionSession.active == nil else { return }
-        let m = NSEvent.mouseLocation
+        let m = point ?? NSEvent.mouseLocation
         let scr = NSScreen.screens.first { NSMouseInRect(m, $0.frame, false) } ?? NSScreen.main
         let n = RingLayout.items.count
         let size = self.size(slots: n, cols: RingLayout.columns(for: n))
@@ -185,7 +185,7 @@ enum ActionRing {
     }
 
     static var frame: NSRect? { panel?.frame }
-    fileprivate static var view: RingView? { panel?.contentView as? RingView }
+    static var view: RingView? { panel?.contentView as? RingView }
 
     static func fire(_ item: RingItem) {
         close()
@@ -211,7 +211,7 @@ enum ActionRing {
 
 /// The popup. Tiles are layers so they can wobble and slide. Long-press any tile to edit:
 /// drag to reorder, the minus badge removes, the plus tile adds from the actions not shown.
-private final class RingView: NSView {
+final class RingView: NSView {
     private var items = RingLayout.items
     private var tiles: [CALayer] = [] // parallel to items
     private var plus: CALayer?
@@ -369,6 +369,7 @@ private final class RingView: NSView {
     func testCenter(_ i: Int) -> NSPoint { center(i) }
     var testDone: NSRect { doneBox }
     func testAdd(_ a: RingItem) { add(a) }
+    var testItemCount: Int { items.count }
 
     func endEditing(save: Bool) {
         guard editing else { return }
@@ -511,10 +512,10 @@ private final class RingView: NSView {
     override func draw(_ dirtyRect: NSRect) {
         if editing {
             let box = doneBox
-            NSColor.white.withAlphaComponent(0.92).setFill()
+            NSColor.black.withAlphaComponent(0.82).setFill() // dark pill reads on light and dark backgrounds
             NSBezierPath(roundedRect: box, xRadius: 11, yRadius: 11).fill()
             let s = NSAttributedString(string: "Done", attributes: [
-                .font: NSFont.systemFont(ofSize: 12, weight: .semibold), .foregroundColor: NSColor.black])
+                .font: NSFont.systemFont(ofSize: 12, weight: .semibold), .foregroundColor: NSColor.white])
             let z = s.size()
             s.draw(at: NSPoint(x: box.midX - z.width / 2, y: box.midY - z.height / 2))
             return

@@ -1,0 +1,55 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Northwind Studio</title>
+<!-- A neutral, fictional page to capture in README demos. Open it full screen
+     in a browser on an otherwise empty desktop before recording. -->
+<style>
+  :root { --bg: #f6f5f2; --ink: #17181b; --mute: #6b6e76; --card: #fff; --line: #e4e2dc; --accent: #2f6fed; --warm: #e8673c; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.5 -apple-system, BlinkMacSystemFont, sans-serif; }
+  header { display: flex; align-items: center; gap: 14px; padding: 22px 48px; border-bottom: 1px solid var(--line); background: var(--card); }
+  .logo { width: 30px; height: 30px; border-radius: 8px; background: linear-gradient(135deg, var(--accent), #7aa2ff); }
+  header b { font-size: 18px; }
+  nav { margin-left: 40px; display: flex; gap: 28px; color: var(--mute); }
+  nav span:first-child { color: var(--ink); font-weight: 600; }
+  main { padding: 40px 48px; display: grid; grid-template-columns: 2fr 1fr; gap: 28px; max-width: 1500px; }
+  h1 { grid-column: 1 / -1; margin: 0; font-size: 34px; letter-spacing: -0.02em; }
+  .sub { grid-column: 1 / -1; margin: -18px 0 4px; color: var(--mute); }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 24px; }
+  .kpis { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+  .kpi small { color: var(--mute); }
+  .kpi div { font-size: 30px; font-weight: 700; letter-spacing: -0.02em; }
+  .up { color: #1f9d55; font-size: 14px; } .down { color: var(--warm); font-size: 14px; }
+  .chart { height: 300px; display: flex; align-items: flex-end; gap: 14px; padding-top: 20px; }
+  .bar { flex: 1; border-radius: 6px 6px 0 0; background: var(--accent); opacity: .85; }
+  .bar:nth-child(7) { background: var(--warm); }
+  h2 { margin: 0 0 6px; font-size: 18px; }
+  ul { list-style: none; margin: 0; padding: 0; }
+  li { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--line); }
+  li:last-child { border: 0; }
+  .note { grid-column: 1 / -1; font-size: 17px; line-height: 1.6; }
+</style>
+<header><div class="logo"></div><b>Northwind Studio</b>
+  <nav><span>Overview</span><span>Projects</span><span>Clients</span><span>Invoices</span></nav></header>
+<main>
+  <h1>Weekly overview</h1>
+  <p class="sub">Week of November 9. All numbers are made up for this demo.</p>
+  <section class="kpis">
+    <div class="card kpi"><small>Revenue</small><div>$48,210</div><span class="up">▲ 12% vs last week</span></div>
+    <div class="card kpi"><small>Active projects</small><div>23</div><span class="up">▲ 3 new</span></div>
+    <div class="card kpi"><small>Hours logged</small><div>612</div><span class="down">▼ 4% vs last week</span></div>
+    <div class="card kpi"><small>Open invoices</small><div>9</div><span class="down">2 overdue</span></div>
+  </section>
+  <section class="card"><h2>Revenue by day</h2>
+    <div class="chart">
+      <div class="bar" style="height:48%"></div><div class="bar" style="height:62%"></div><div class="bar" style="height:55%"></div>
+      <div class="bar" style="height:78%"></div><div class="bar" style="height:70%"></div><div class="bar" style="height:40%"></div>
+      <div class="bar" style="height:92%"></div></div></section>
+  <section class="card"><h2>Top clients</h2><ul>
+    <li><span>Harbor &amp; Pine</span><b>$12,400</b></li><li><span>Blue Fern Labs</span><b>$9,850</b></li>
+    <li><span>Copperline</span><b>$7,300</b></li><li><span>Oak Street Bakery</span><b>$4,120</b></li>
+    <li><span>Meridian Dental</span><b>$3,900</b></li></ul></section>
+  <section class="card note"><h2>Notes for Monday</h2>
+    Kickoff with Harbor &amp; Pine moved to 10:30. Send the revised Copperline estimate before noon,
+    and follow up on the two overdue invoices. Invoice #1042 is due Friday.</section>
+</main>
