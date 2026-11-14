@@ -36,12 +36,15 @@ for f in sorted(glob.glob(d + '/*.png')):
         im.paste(ref.crop((0, H - 240, 280, H)), (0, H - 240))
     if name == 'annotate':  # the editor's window buttons and title, top-left
         im.paste(Image.new('RGB', (300, E), (35, 35, 35)), (0, 0))
+        for cx, cy in [(0, 0), (W - 20, 0), (0, H - 20), (W - 20, H - 20)]:  # rounded window corners
+            im.paste(Image.new('RGB', (20, 20), (35, 35, 35)), (cx, cy))
     P = edges(im); bad = 0
     for p, r, q in zip(P, R, D):
         ok = max(abs(a - b) for a, b in zip(p, r)) < 40 or (name == 'capture' and max(abs(a - b) for a, b in zip(p, q)) < 40) \
-             or (name == 'annotate' and max(p) < 70)  # the editor window's dark frame
+             or (name == 'annotate' and (max(p) < 70 or (max(p) < 110 and max(p) - min(p) < 12)))  # the editor's dark frame and its gray border
         bad += not ok
     if bad > len(P) * 0.002:
+        im.save('/tmp/glint-demo-failed-frame.png')
         sys.exit(f'{name}: frame {f.split("/")[-1]} has {bad} edge pixels that are not the demo; not writing a GIF')
 PY
 }
@@ -49,6 +52,6 @@ PY
 # Pass a name to record just that one: popup, capture or annotate.
 only="${2:-}"
 gif() { [ -z "$only" ] || [ "$only" = "$1" ]; }
-gif popup && { rec popup 25; docs/demo/to-gif.sh "$T/popup.mov" docs/popup-edit.gif 560 15 640:440:280:160; }
+gif popup && { rec popup 25; docs/demo/to-gif.sh "$T/popup.mov" docs/popup-edit.gif 560 15 640:440:280:160 17; }
 gif capture && { rec capture 9; docs/demo/to-gif.sh "$T/capture.mov" docs/capture.gif 800 15; }
 gif annotate && { rec annotate 11; docs/demo/to-gif.sh "$T/annotate.mov" docs/annotate.gif 800 15; }

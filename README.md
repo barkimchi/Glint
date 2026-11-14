@@ -44,6 +44,9 @@ That downloads the release pinned in this repo, verifies it against the pinned c
 
 Every one of these has a keyboard shortcut, a button on the edge widget and a button in the middle-click popup.
 
+<p align="center"><img src="docs/capture.gif" alt="Capturing an area: the screen freezes and dims, a rectangle is dragged over the dashboard's cards, and the capture appears as a thumbnail in the corner" width="800"></p>
+<p align="center"><sub>Capture an area: drag, release, and the shot is saved and waiting in the corner.</sub></p>
+
 ## Three ways to trigger a capture
 
 ### 1. The middle-click popup
@@ -52,8 +55,8 @@ Press the middle mouse button anywhere and the actions appear under your pointer
 
 Long-press any button to edit the popup: the buttons wiggle, drag one to reorder, tap its minus badge to remove it, or tap the plus tile to add an action from the library or any app on your Mac (add as many app buttons as you like). Click Done (or anywhere outside) to save. An even number of buttons sits in two even rows; otherwise they wrap in rows of four.
 
-<p align="center"><img src="docs/popup.png" alt="The middle-click popup: a four by two grid of capture buttons" width="520"></p>
-<p align="center"><sub>Rendering of the popup with the current buttons.</sub></p>
+<p align="center"><img src="docs/popup-edit.gif" alt="The popup opens, buttons show their names on hover, a long press makes them wiggle, one is dragged to a new spot, one is removed, Safari and Notes are added, and Done saves the layout" width="560"></p>
+<p align="center"><sub>Hover for names, long-press to edit: reorder, remove, and add apps.</sub></p>
 
 ### 2. The edge widget
 
@@ -86,7 +89,7 @@ Esc cancels any selection. Change or clear any shortcut in Settings: click it an
 
 Arrows, boxes, ellipses, lines, free draw, text, text blocks, highlight, pixelate, numbered steps and crop, in seven colours, with undo and redo. Copy with ⇧⌘C, save with ⌘S, or pin the result.
 
-<p align="center"><img src="docs/editor.png" alt="The annotation editor with its toolbar" width="100%"></p>
+<p align="center"><img src="docs/annotate.gif" alt="The annotation editor: a box and an arrow call out a card, a row is highlighted, numbered steps are placed, and amounts are pixelated" width="800"></p>
 
 ### Quick access thumbnail
 
