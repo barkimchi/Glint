@@ -17,8 +17,10 @@ enum Demo {
         region = CGRect(x: n[0], y: primaryH - n[1] - n[3], width: n[2], height: n[3])
         Task {
             showStage(img) // also under the editor, so nothing behind it shows before it opens
+            // Park the real pointer off the stage so only the drawn one appears.
+            CGWarpMouseCursorPosition(CGPoint(x: region.maxX + 300, y: primaryH - region.maxY + 40))
             showPointer(at: NSPoint(x: region.midX + 260, y: region.minY + 120))
-            try? await Task.sleep(nanoseconds: 2_000_000_000) // the recorder starts after the stage is up
+            try? await Task.sleep(nanoseconds: 3_000_000_000) // the recorder starts after the stage is up
             switch name {
             case "ring", "popup": await ring()
             case "capture": await capture(img)
@@ -86,12 +88,8 @@ enum Demo {
     // MARK: Popup: open, hover, long-press to edit, drag, remove, add an app, Done
 
     private static func ring() async {
-        let saved = UserDefaults.standard.stringArray(forKey: "ring.order")
-        UserDefaults.standard.set(["area", "window", "fullscreen", "scroll", "page", "ocr"], forKey: "ring.order")
-        defer {
-            if let saved { UserDefaults.standard.set(saved, forKey: "ring.order") }
-            else { UserDefaults.standard.removeObject(forKey: "ring.order") }
-        }
+        RingLayout.scratch = [.action(.area), .action(.window), .action(.fullscreen),
+                              .action(.scroll), .action(.page), .action(.ocr)] // the saved order is never touched
         let c = NSPoint(x: region.midX, y: region.midY)
         await glide(to: c, 0.5)
         ActionRing.show(at: c)

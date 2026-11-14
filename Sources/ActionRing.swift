@@ -100,15 +100,21 @@ enum RingItem: Hashable {
 
 /// Which buttons the popup shows, in order. Edited in place: long-press any button.
 enum RingLayout {
-    static var items: [RingItem] {
+    /// When set (demos and tests), the popup uses this order and never touches the user's saved one.
+    @MainActor static var scratch: [RingItem]?
+    @MainActor static var items: [RingItem] {
         get {
+            if let scratch { return scratch }
             guard let raw = UserDefaults.standard.stringArray(forKey: "ring.order") else { return HotkeyAction.allCases.map { .action($0) } }
             var seen = Set<RingItem>()
             return raw.compactMap(RingItem.init(key:)).filter { seen.insert($0).inserted }
         }
-        set { UserDefaults.standard.set(newValue.map(\.key), forKey: "ring.order") }
+        set {
+            if scratch != nil { scratch = newValue; return }
+            UserDefaults.standard.set(newValue.map(\.key), forKey: "ring.order")
+        }
     }
-    static var hiddenActions: [HotkeyAction] { HotkeyAction.allCases.filter { !items.contains(.action($0)) } }
+    @MainActor static var hiddenActions: [HotkeyAction] { HotkeyAction.allCases.filter { !items.contains(.action($0)) } }
 
     /// An even number of buttons sits in two even rows; otherwise rows of four.
     static func columns(for count: Int) -> Int {
@@ -541,8 +547,7 @@ final class RingView: NSView {
 @MainActor
 enum RingSelfTest {
     static func run() {
-        let saved = UserDefaults.standard.stringArray(forKey: "ring.order")
-        UserDefaults.standard.removeObject(forKey: "ring.order")
+        RingLayout.scratch = HotkeyAction.allCases.map { .action($0) } // never touches the saved order
         ActionRing.show()
         guard let v = ActionRing.view, let w = v.window else { ScrollTest.log("ring: no view"); NSApp.terminate(nil); return }
         func ev(_ t: NSEvent.EventType, _ p: NSPoint) -> NSEvent {
@@ -578,8 +583,8 @@ enum RingSelfTest {
             v.mouseDown(with: ev(.leftMouseDown, NSPoint(x: done.midX, y: done.midY)))
             ScrollTest.log("after done, editing:", v.testEditing, "panel:", Int(w.frame.width), "x", Int(w.frame.height), "saved:", order())
             ActionRing.close()
-            if let saved { UserDefaults.standard.set(saved, forKey: "ring.order") } else { UserDefaults.standard.removeObject(forKey: "ring.order") }
-            ScrollTest.log("restored:", order())
+            RingLayout.scratch = nil
+            ScrollTest.log("saved order untouched:", order())
             NSApp.terminate(nil)
         }
     }
