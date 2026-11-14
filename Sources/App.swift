@@ -29,6 +29,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if let i = args.firstIndex(of: "--edit"), i + 1 < args.count {
             EditorWindow.open(URL(fileURLWithPath: args[i + 1])) // handy for testing the editor
         }
+        if let i = args.firstIndex(of: "--pin"), i + 1 < args.count {
+            Pins.pin(URL(fileURLWithPath: args[i + 1])) // handy for testing pin sizing
+        }
         if let i = args.firstIndex(of: "--shots"), i + 1 < args.count {
             let dir = URL(fileURLWithPath: args[i + 1])
             DispatchQueue.main.asyncAfter(deadline: .now() + 2) { Shots.write(to: dir); NSApp.terminate(nil) }

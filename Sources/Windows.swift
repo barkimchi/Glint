@@ -210,8 +210,19 @@ enum Pins {
     }
 
     static func pin(_ cg: CGImage) {
-        let scale = NSScreen.main?.backingScaleFactor ?? 2
-        let size = NSSize(width: CGFloat(cg.width) / scale, height: CGFloat(cg.height) / scale)
+        let docked = EdgeWidget.isVisible && EdgeWidget.frame != nil
+        let mouse = NSEvent.mouseLocation
+        let screen = docked ? EdgeWidget.screen
+            : (NSScreen.screens.first { NSMouseInRect(mouse, $0.frame, false) } ?? NSScreen.main ?? NSScreen.screens[0])
+        let scale = screen.backingScaleFactor
+        var size = NSSize(width: CGFloat(cg.width) / scale, height: CGFloat(cg.height) / scale)
+        // A pin is a reference, not a full-size copy. Docked pins stack under the widget, so they
+        // start as thumbnails; loose pins start at most a third of the screen wide or half as tall.
+        // Never enlarged; drag a corner to resize.
+        let vf = screen.visibleFrame
+        let maxW = docked ? 280 : vf.width / 3, maxH = docked ? vf.height / 4 : vf.height / 2
+        let fit = min(1, maxW / size.width, maxH / size.height)
+        size = NSSize(width: (size.width * fit).rounded(), height: (size.height * fit).rounded())
         let p = PinPanel(contentRect: NSRect(origin: .zero, size: size),
                          styleMask: [.borderless, .nonactivatingPanel, .resizable], backing: .buffered, defer: false)
         p.level = .floating
@@ -223,10 +234,9 @@ enum Pins {
         p.contentAspectRatio = size
         p.contentView = PinView(image: cg)
         all.append(p)
-        if EdgeWidget.isVisible, EdgeWidget.frame != nil {
+        if docked {
             dockAll()
         } else { // widget hidden: drop the pin at the pointer, as before
-            let mouse = NSEvent.mouseLocation
             p.setFrameOrigin(NSPoint(x: mouse.x - size.width / 2, y: mouse.y - size.height / 2))
         }
         p.orderFrontRegardless()
