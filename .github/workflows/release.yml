@@ -128,11 +128,12 @@ jobs:
         run: gh release create "${{ github.ref_name }}" build/Glint.zip --title "Glint ${{ github.ref_name }}" --generate-notes
       - name: Publish appcast entry
         run: |
-          python3 .github/update_appcast.py "${{ github.ref_name }}" "$(cat sig.txt)" "$(date -u '+%a, %d %b %Y %H:%M:%S +0000')"
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git fetch origin master
           git checkout -B appcast-publish origin/master
+          # Edit the appcast only after switching to master, or checkout refuses to run.
+          python3 .github/update_appcast.py "${{ github.ref_name }}" "$(cat sig.txt)" "$(date -u '+%a, %d %b %Y %H:%M:%S +0000')"
           # Pin the release the installer fetches, after the release exists, so the
           # pinned asset is always available and the checksum always matches it.
           shasum -a 256 build/Glint.zip | awk '{print $1}' > bin/SHA256
