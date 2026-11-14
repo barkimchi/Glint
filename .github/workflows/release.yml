@@ -58,7 +58,8 @@ jobs:
           codesign --force --sign "$SIGN_IDENTITY" --options runtime --timestamp "$SPARKLE/Updater.app"
           codesign --force --sign "$SIGN_IDENTITY" --options runtime --timestamp "$SPARKLE/Autoupdate"
           codesign --force --sign "$SIGN_IDENTITY" --options runtime --timestamp "$APP/Contents/Frameworks/Sparkle.framework"
-          codesign --force --sign "$SIGN_IDENTITY" --options runtime --timestamp "$APP"
+          # Hardened runtime blocks the microphone unless the app carries this entitlement.
+          codesign --force --sign "$SIGN_IDENTITY" --options runtime --timestamp --entitlements Config/Release.entitlements "$APP"
       - name: Verify release signature and hardening
         run: |
           set -euo pipefail
@@ -70,6 +71,10 @@ jobs:
           ENT="$(codesign -d --entitlements - --xml "$APP" 2>/dev/null || true)"
           if grep -q get-task-allow <<<"$ENT"; then
             echo "::error::Release build must not carry the get-task-allow entitlement"
+            exit 1
+          fi
+          if ! grep -q com.apple.security.device.audio-input <<<"$ENT"; then
+            echo "::error::Release build must carry the audio-input entitlement (microphone recording)"
             exit 1
           fi
           if ! grep -q 'flags=.*runtime' <<<"$INFO"; then
