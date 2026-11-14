@@ -15,11 +15,11 @@ Download the app and drag it into Applications:
 
 1. Download [Glint.zip](https://github.com/barkimchi/Glint/releases/latest/download/Glint.zip) (the latest release; older ones live under [Releases](https://github.com/barkimchi/Glint/releases)).
 2. Double-click the zip to unzip it, then drag `Glint.app` into your Applications folder and open it from there.
-3. Glint is not notarized with Apple yet, so the first time you open it macOS warns that it can't check the app for malicious software. If you're comfortable opening it anyway (you got it from this repo): open System Settings > Privacy & Security, scroll down, click Open Anyway next to Glint, then Open at the prompt. That's Apple's documented way to open an app that isn't notarized; nothing is disabled and the quarantine flag stays. macOS remembers the choice for that copy of the app - an update can bring the warning back, and the same steps clear it.
+3. Releases are signed with a Developer ID and notarized by Apple, so it opens like any other app. (v0.1.4 and earlier were not notarized: if one of those warns that macOS can't check it, open System Settings > Privacy & Security and click Open Anyway, or install the latest release.)
 
 Glint checks for updates on its own and offers to install them; the menu also has Check for Updates…. Updates are verified against Glint's Sparkle key before anything is installed. (Releases before v0.1.2 don't self-update: install the latest zip once to get onto the updater.)
 
-On first launch macOS asks for Screen Recording access; Glint shows a button that opens the right System Settings pane. Release builds are ad hoc signed (hardened runtime on, no debug entitlements), so macOS may ask for that access again after an update.
+On first launch macOS asks for Screen Recording access; Glint shows a button that opens the right System Settings pane. Release builds keep the same Developer ID signature from version to version, so that access carries over when Glint updates.
 
 Prefer the terminal? This does the same thing without a browser:
 
@@ -127,19 +127,13 @@ Useful launch flags on `Glint.app/Contents/MacOS/Glint`:
 
 ### Cutting a release
 
-```bash
-xcodebuild -project Glint.xcodeproj -scheme Glint -configuration Release -derivedDataPath build build
-```
+Bump `CFBundleShortVersionString` in `project.yml`, commit, then push a version tag:
 
 ```bash
-ditto -c -k --keepParent build/Build/Products/Release/Glint.app build/Glint.zip
+git tag v0.1.6 && git push origin v0.1.6
 ```
 
-```bash
-gh release create v0.1.1 build/Glint.zip --title "Glint 0.1.1"
-```
-
-The release workflow publishes the zip, then pins its tag and checksum into `bin/RELEASE` and `bin/SHA256`; the installer fetches exactly that pinned release.
+The release workflow (`.github/workflows/release.yml`) builds on a macOS runner, signs with the Developer ID, has Apple notarize and staple it, signs the update for Sparkle, and publishes the zip. It then adds the appcast entry and pins the tag and checksum into `bin/RELEASE` and `bin/SHA256`, so the installer fetches exactly that release. `scripts/release.sh` does the build, sign and notarize steps locally.
 
 ## Roadmap
 
@@ -150,4 +144,3 @@ The release workflow publishes the zip, then pins its tag and checksum into `bin
 - Custom app opens: choose which app the quick-open action launches, not just Claude
 - Shortcut selection in the middle-click popup (scope to settle: picking which actions appear, remapping keys from the popup, or both)
 - Clearer first run: permissions and where screenshots are saved
-- Apple notarization, so first launch needs no security override (Developer ID signing is prepared for a future release; current downloads are ad hoc signed)
