@@ -24,7 +24,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         AppController.shared.start()
         if args.contains("--settings") { SettingsWindow.show() }
-        if args.contains("--ring-open") { ActionRing.show() } // for screenshots of the ring
+        if args.contains("--ring-open") { ActionRing.show(); if let f = ActionRing.frame { ScrollTest.log("ring frame", Int(f.minX), Int(f.minY), Int(f.width), Int(f.height)) } } // for screenshots of the ring
         if args.contains("--ring-selftest") { RingSelfTest.run() }
         if args.contains("--ring-edit") { // for screenshots of the ring's edit mode; logs the panel frame
             ActionRing.showEditing()

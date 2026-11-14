@@ -50,7 +50,7 @@ Every one of these has a keyboard shortcut, a button on the edge widget and a bu
 
 Press the middle mouse button anywhere and the actions appear under your pointer. Hover a button to see its name, click to fire it, click elsewhere to dismiss.
 
-Long-press any button to edit the popup: the buttons wiggle, drag one to reorder, tap its minus badge to remove it, or tap the plus tile to add an action back from the library. Click Done (or anywhere outside) to save.
+Long-press any button to edit the popup: the buttons wiggle, drag one to reorder, tap its minus badge to remove it, or tap the plus tile to add an action from the library or any app on your Mac (add as many app buttons as you like). Click Done (or anywhere outside) to save. An even number of buttons sits in two even rows; otherwise they wrap in rows of four.
 
 <p align="center"><img src="docs/popup.png" alt="The middle-click popup: a four by two grid of capture buttons" width="520"></p>
 <p align="center"><sub>Rendering of the popup with the current buttons.</sub></p>
