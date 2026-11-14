@@ -27,7 +27,7 @@ trap 'rm -rf "$TMP"' EXIT
 TAG="$(tr -d '[:space:]' < "$SCRIPT_DIR/RELEASE")"
 PINNED="$(tr -d '[:space:]' < "$SCRIPT_DIR/SHA256")"
 
-echo "Downloading Glint $TAG…"
+echo "Downloading Glint ${TAG}..."
 if ! curl -fsSL "https://github.com/$REPO/releases/download/$TAG/Glint.zip" -o "$TMP/Glint.zip" 2>/dev/null; then
   # Private repo: fall back to the GitHub CLI, which carries your sign-in.
   command -v gh >/dev/null || { echo "Download failed. If the repo is private, install the GitHub CLI and run: gh auth login"; exit 1; }
