@@ -36,7 +36,7 @@ That downloads the release pinned in this repo, verifies it against the pinned c
 | **Capture an area** | The screen freezes, you drag a rectangle. Menus and hover states stay exactly as they were. |
 | **Capture a window** | Click any window. The shadow comes with it. |
 | **Capture fullscreen** | The display under the pointer. |
-| **Scrolling capture** | Drag over a scrollable area, then scroll it. Glint stitches one tall image with no seams. |
+| **Scrolling capture** | Drag over a scrollable area and Glint scrolls it for you, stitching one tall image with no seams. |
 | **Capture a full page** | Click a window and Glint scrolls it top to bottom for you, keeping toolbars and sticky headers once. |
 | **Grab text** | Drag over anything on screen and the text lands on your clipboard. Reads QR codes too. |
 | **Record the screen** | An area or the whole display, to MP4, with optional click rings, keystrokes, system audio and microphone. One click turns it into a GIF. |
@@ -101,7 +101,7 @@ Everything is kept for 30 days in `~/Library/Application Support/Glint/History` 
 ## Details worth knowing
 
 - **Full-page capture** works out which rows actually scroll, so fixed toolbars and footers appear once. A fixed sidebar that has content in it will repeat down the image. The cap is 40,000 px.
-- **Scrolling capture** lets you scroll by hand at any speed, and warns you if it loses track. Auto-scroll does it for you and stops at the end.
+- **Scrolling capture** scrolls for you and stops at the end (this needs Accessibility access). Press Stop Auto to scroll by hand at any speed instead; it warns you if it loses track.
 - **Recording** is H.264 MP4 at 30 fps. Click rings are yellow for left and blue for right. The keystroke pill never shows password fields, because macOS blocks them. System audio and microphone are mixed into one AAC track.
 - **Permissions**: Screen Recording for everything. Accessibility for full-page capture, auto-scroll, keystroke display and the middle-click popup. Microphone only if you turn it on.
 - **Middle click**: while the popup is switched on, Glint takes the middle button system-wide. Turn it off from the menu bar (Middle-Click Action Ring) to get it back.

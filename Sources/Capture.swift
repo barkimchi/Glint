@@ -167,7 +167,7 @@ final class SelectionView: NSView {
         case .ocr: return "Drag over text to copy it  ·  Esc to cancel"
         case .record: return "Drag an area to record, or press Return for the whole screen  ·  Esc to cancel"
         case .page: return "Click a page to capture all of it, top to bottom  ·  Esc to cancel"
-        case .scroll: return "Drag over the scrollable area, then scroll it  ·  Esc to cancel"
+        case .scroll: return "Drag over the scrollable area. Glint scrolls it for you  ·  Esc to cancel"
         }
     }
 

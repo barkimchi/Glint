@@ -150,7 +150,10 @@ final class ScrollSession {
     private var idleTicks = 0
     private let onDone: (CGImage?) -> Void
 
-    init(frozen: Frozen, rect: CGRect, page: Bool = false, onDone: @escaping (CGImage?) -> Void) {
+    private let startAuto: Bool
+
+    init(frozen: Frozen, rect: CGRect, page: Bool = false, auto: Bool = false, onDone: @escaping (CGImage?) -> Void) {
+        self.startAuto = auto
         self.frozen = frozen
         self.rect = rect
         self.source = CGRect(x: rect.minX, y: frozen.screen.frame.height - rect.maxY,
@@ -174,6 +177,7 @@ final class ScrollSession {
         let global = rect.offsetBy(dx: frozen.screen.frame.minX, dy: frozen.screen.frame.minY)
         showBorder(global)
         showBar(below: global)
+        if startAuto && !pageMode { toggleAuto() }
         Task { await loop() }
     }
 

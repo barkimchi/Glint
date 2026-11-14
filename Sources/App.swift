@@ -32,6 +32,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if let i = args.firstIndex(of: "--pin"), i + 1 < args.count {
             Pins.pin(URL(fileURLWithPath: args[i + 1])) // handy for testing pin sizing
         }
+        if let i = args.firstIndex(of: "--scrolltest"), i + 1 < args.count {
+            ScrollTest.log("scrolltest: start", args[i + 1]); ScrollTest.run(args[i + 1]) // "x,y,w,h" in screen points, top-left origin
+        }
         if let i = args.firstIndex(of: "--shots"), i + 1 < args.count {
             let dir = URL(fileURLWithPath: args[i + 1])
             DispatchQueue.main.asyncAfter(deadline: .now() + 2) { Shots.write(to: dir); NSApp.terminate(nil) }
@@ -234,7 +237,8 @@ final class AppController: NSObject, NSMenuDelegate {
             case .record:
                 startRecording(f, rect)
             case .scroll:
-                ScrollSession(frozen: f, rect: rect) { [weak self] img in
+                // Starts scrolling on its own; press Stop Auto on the bar to scroll by hand instead.
+                ScrollSession(frozen: f, rect: rect, auto: true) { [weak self] img in
                     if let img { self?.deliver(img) }
                 }.start()
             case .ocr:
@@ -460,6 +464,42 @@ enum Shots {
             view.cacheDisplay(in: view.bounds, to: rep)
             let name = w.title.isEmpty ? "panel-\(Int(view.bounds.width))x\(Int(view.bounds.height))" : w.title.lowercased().filter { $0.isLetter }
             try? rep.representation(using: .png, properties: [:])?.write(to: dir.appendingPathComponent(name + ".png"))
+        }
+    }
+}
+
+/// `--scrolltest x,y,w,h`: runs an auto-scrolling capture on that region (top-left origin points),
+/// prints the stitched height and saves it to /tmp/glint-scrolltest.png, then quits.
+@MainActor
+enum ScrollTest {
+    static func log(_ items: Any...) {
+        let line = items.map { "\($0)" }.joined(separator: " ") + "\n"
+        let url = URL(fileURLWithPath: "/tmp/glint-scrolltest.log")
+        if let h = try? FileHandle(forWritingTo: url) { h.seekToEndOfFile(); h.write(Data(line.utf8)); try? h.close() }
+        else { try? Data(line.utf8).write(to: url) }
+    }
+    static func run(_ spec: String) {
+        let n = spec.split(separator: ",").compactMap { Double($0) }
+        guard n.count == 4 else { log("scrolltest: need x,y,w,h"); NSApp.terminate(nil); return }
+        Task {
+            do {
+                let c = try await Capture.content()
+                let primaryH = NSScreen.screens.first?.frame.height ?? 0
+                let g = CGRect(x: n[0], y: primaryH - n[1] - n[3], width: n[2], height: n[3]) // to bottom-left global
+                guard let d = c.displays.first(where: { Capture.screen(for: $0)?.frame.intersects(g) == true }),
+                      let s = Capture.screen(for: d) else { log("scrolltest: no display"); NSApp.terminate(nil); return }
+                let f = Frozen(screen: s, display: d, image: try await Capture.snapshot(d, content: c))
+                let local = g.offsetBy(dx: -s.frame.minX, dy: -s.frame.minY)
+                log("scrolltest: AX trusted =", AXIsProcessTrusted())
+                ScrollSession(frozen: f, rect: local, auto: true) { img in
+                    if let img {
+                        log("scrolltest: stitched \(img.width)x\(img.height) px")
+                        let rep = NSBitmapImageRep(cgImage: img)
+                        try? rep.representation(using: .png, properties: [:])?.write(to: URL(fileURLWithPath: "/tmp/glint-scrolltest.png"))
+                    } else { log("scrolltest: no image") }
+                    NSApp.terminate(nil)
+                }.start()
+            } catch { log("scrolltest: \(error)"); NSApp.terminate(nil) }
         }
     }
 }
