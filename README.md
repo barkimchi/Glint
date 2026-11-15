@@ -1,155 +1,144 @@
 <p align="center"><img src="docs/hero.png" alt="Glint: screenshots, recordings and annotation for macOS" width="100%"></p>
 
-<h1 align="center">Glint</h1>
+<h3 align="center">Screenshots, recordings and markup for macOS.<br>One middle-click away.</h3>
 
 <p align="center">
-A native macOS screenshot and screen recording tool that lives in the menu bar.<br>
-Capture an area, a window, a whole page or a video, then mark it up and drop it anywhere.
+  <a href="https://github.com/barkimchi/Glint/releases/latest/download/Glint.zip"><img src="https://img.shields.io/badge/Download_for_macOS-FFB21A?style=for-the-badge&logo=apple&logoColor=black&labelColor=FFB21A" alt="Download for macOS"></a>
+</p>
+<p align="center">
+  <a href="https://github.com/barkimchi/Glint/releases/latest"><img src="https://img.shields.io/github/v/release/barkimchi/Glint?style=flat-square&label=release&color=4A4D52" alt="Latest release"></a>
+  <img src="https://img.shields.io/badge/macOS-15%2B-4A4D52?style=flat-square" alt="macOS 15 or later">
+  <img src="https://img.shields.io/badge/notarized_by-Apple-4A4D52?style=flat-square" alt="Notarized by Apple">
+  <img src="https://img.shields.io/badge/native-Swift-4A4D52?style=flat-square&logo=swift&logoColor=white" alt="Native Swift">
 </p>
 
-<p align="center"><sub>Swift, AppKit and SwiftUI · ScreenCaptureKit, Vision, AVFoundation · no third-party dependencies · macOS 15+</sub></p>
+<p align="center">Or from the terminal: <code>npx github:barkimchi/glint-app</code></p>
 
-## Install
+<br>
 
-Download the app and drag it into Applications:
+## ⚡ Capture anything
 
-1. Download [Glint.zip](https://github.com/barkimchi/Glint/releases/latest/download/Glint.zip) (the latest release; older ones live under [Releases](https://github.com/barkimchi/Glint/releases)).
-2. Double-click the zip to unzip it, then drag `Glint.app` into your Applications folder and open it from there.
-3. Releases are signed with a Developer ID and notarized by Apple, so it opens like any other app. (v0.1.4 and earlier were not notarized: if one of those warns that macOS can't check it, open System Settings > Privacy & Security and click Open Anyway, or install the latest release.)
+<img src="docs/capture.gif" alt="Capturing an area: the screen freezes and dims, a rectangle is dragged over the dashboard's cards, and the capture appears as a thumbnail in the corner" width="100%">
 
-Glint checks for updates on its own and offers to install them; the menu also has Check for Updates…. Updates are verified against Glint's Sparkle key before anything is installed. (Releases before v0.1.2 don't self-update: install the latest zip once to get onto the updater.)
+The screen freezes, you drag, it's saved. Menus and hover states stay exactly where they were.
 
-On first launch macOS asks for Screen Recording access; Glint shows a button that opens the right System Settings pane. Release builds keep the same Developer ID signature from version to version, so that access carries over when Glint updates.
+<table>
+  <tr>
+    <td><b>Area</b> · <b>Window</b> · <b>Fullscreen</b></td>
+    <td>The classics. Window shots keep their shadow.</td>
+  </tr>
+  <tr>
+    <td><b>Scrolling</b> · <b>Full page</b></td>
+    <td>Glint scrolls for you and stitches one tall, seamless image.</td>
+  </tr>
+  <tr>
+    <td><b>Grab text</b></td>
+    <td>Drag over anything and the text lands on your clipboard. QR codes too.</td>
+  </tr>
+  <tr>
+    <td><b>Record</b></td>
+    <td>MP4 with click rings, keystrokes and audio. One click makes it a GIF.</td>
+  </tr>
+</table>
 
-Prefer the terminal? This does the same thing without a browser:
+<br>
 
-```bash
-npx github:barkimchi/glint-app
-```
+## 🎛️ Your popup, your way
 
-That downloads the release pinned in this repo, verifies it against the pinned checksum, puts `Glint.app` in `~/Applications` and opens it. You need Node for `npx`, nothing else.
+<table>
+  <tr>
+    <td width="50%"><img src="docs/popup-edit.gif" alt="The popup opens, buttons show their names on hover, a long press makes them wiggle, one is dragged to a new spot, one is removed, Safari and Notes are added, and Done saves the layout" width="100%"></td>
+    <td width="50%">
+      <b>Middle-click anywhere</b> and your actions appear under the pointer.<br><br>
+      <b>Long-press</b> and they wiggle: drag to reorder, tap ⊖ to remove, tap ＋ to add actions or <b>any app on your Mac</b>.<br><br>
+      Prefer the keyboard? Every action has a shortcut. Prefer the mouse? A slim widget hugs any screen edge.
+    </td>
+  </tr>
+</table>
 
-## What it does
+<br>
 
-| | |
-|---|---|
-| **Capture an area** | The screen freezes, you drag a rectangle. Menus and hover states stay exactly as they were. |
-| **Capture a window** | Click any window. The shadow comes with it. |
-| **Capture fullscreen** | The display under the pointer. |
-| **Scrolling capture** | Drag over a scrollable area and Glint scrolls it for you, stitching one tall image with no seams. |
-| **Capture a full page** | Click a window and Glint scrolls it top to bottom for you, keeping toolbars and sticky headers once. |
-| **Grab text** | Drag over anything on screen and the text lands on your clipboard. Reads QR codes too. |
-| **Record the screen** | An area or the whole display, to MP4, with optional click rings, keystrokes, system audio and microphone. One click turns it into a GIF. |
-| **Go to Claude** | Jumps straight to the Claude desktop app, or any app you pick in Settings (the button then shows that app's icon). |
+## ✏️ Mark it up, then change your mind
 
-Every one of these has a keyboard shortcut, a button on the edge widget and a button in the middle-click popup.
+<img src="docs/annotate.gif" alt="The annotation editor: a box and an arrow call out a card, a row is highlighted, numbered steps are placed, amounts are pixelated, then the box is selected, moved, resized and recoloured, and the image is put on a gradient background" width="100%">
 
-<p align="center"><img src="docs/capture.gif" alt="Capturing an area: the screen freezes and dims, a rectangle is dragged over the dashboard's cards, and the capture appears as a thumbnail in the corner" width="800"></p>
-<p align="center"><sub>Capture an area: drag, release, and the shot is saved and waiting in the corner.</sub></p>
+Arrows, boxes, highlights, numbered steps, text, pixelate and crop. Every mark stays editable: select it to move, resize, recolour or delete.
 
-## Three ways to trigger a capture
+<br>
 
-### 1. The middle-click popup
+## 🖼️ Make it presentable
 
-Press the middle mouse button anywhere and the actions appear under your pointer. Hover a button to see its name, click to fire it, click elsewhere to dismiss.
+<table>
+  <tr>
+    <td width="55%"><img src="docs/background.png" alt="A screenshot framed on a pink and orange gradient with padding, rounded corners and a soft shadow" width="100%"></td>
+    <td width="45%">
+      One click puts your shot on a gradient with padding, rounded corners and a soft shadow.<br><br>
+      Six backgrounds, adjustable padding. Ready for a post, a deck or the docs.
+    </td>
+  </tr>
+</table>
 
-Long-press any button to edit the popup: the buttons wiggle, drag one to reorder, tap its minus badge to remove it, or tap the plus tile to add an action from the library or any app on your Mac (add as many app buttons as you like). Click Done (or anywhere outside) to save. An even number of buttons sits in two even rows; otherwise they wrap in rows of four.
+<br>
 
-<p align="center"><img src="docs/popup-edit.gif" alt="The popup opens, buttons show their names on hover, a long press makes them wiggle, one is dragged to a new spot, one is removed, Safari and Notes are added, and Done saves the layout" width="560"></p>
-<p align="center"><sub>Hover for names, long-press to edit: reorder, remove, and add apps.</sub></p>
+## 📌 And the small things
 
-### 2. The edge widget
+**Quick access** · every shot waits in the corner: drag it anywhere, or hover for Copy, Annotate and Pin.<br>
+**Pins** · float a screenshot above every window, fade it, or make it click-through.<br>
+**History** · 30 days of captures, one click from the menu bar.<br>
+**Private** · no account, no cloud. Everything stays on your Mac.
 
-A thin tab that hugs the border of your screen. Hover and it opens into the same buttons; click the tab to pin it open. Drag the grip to park it on any edge of any display.
+<br>
 
-<p align="center"><img src="docs/widget.png" alt="The edge widget, opened along the bottom edge of the screen" width="720"></p>
-<p align="center"><sub>Rendering of the edge widget with the current buttons.</sub></p>
+<details>
+<summary><b>Keyboard shortcuts</b></summary>
+<br>
 
-### 3. Keyboard shortcuts
-
-| Default | Action |
+| Shortcut | Action |
 |---|---|
 | ⌃⇧4 | Capture area |
 | ⌃⇧5 | Capture window |
 | ⌃⇧3 | Capture fullscreen |
 | ⌃⇧7 | Scrolling capture |
 | ⌃⇧8 | Capture full page |
-| ⌃⇧2 | Grab text (OCR) |
+| ⌃⇧2 | Grab text |
 | ⌃⇧6 | Start or stop a recording |
-| ⌃⇧9 | Go to Claude |
+| ⌃⇧9 | Go to Claude (or the app you pick) |
 
-Esc cancels any selection. Change or clear any shortcut in Settings: click it and press the new keys.
+Esc cancels any selection. Change any shortcut in Settings.
 
-<p align="center"><img src="docs/settings-window.png" alt="Glint Settings: shortcuts, recording options and save folder" width="380"></p>
-<p align="center"><sub>Settings with the default shortcuts. Go-to button opens picks the app for the Go-to button.</sub></p>
+<p align="center"><img src="docs/settings-window.png" alt="Glint Settings: shortcuts, the Go-to app, recording options and save folder" width="360"></p>
+</details>
 
-## After the capture
+<details>
+<summary><b>Install, updates and permissions</b></summary>
+<br>
 
-### Annotate
+- **Install**: unzip, drag `Glint.app` to Applications, open it. Releases are signed and notarized by Apple.
+- **Updates**: Glint checks on its own and verifies each update before installing. The menu has Check for Updates too.
+- **Permissions**: Screen Recording for everything. Accessibility for full-page and scrolling capture, keystrokes and the middle-click popup. Microphone only if you turn it on.
+- **Middle click**: while the popup is on, Glint takes the middle button system-wide. Turn it off from the menu bar.
+- **Files**: screenshots save to Desktop/Glint Screenshots by default. History lives in `~/Library/Application Support/Glint/History`.
+</details>
 
-Arrows, boxes, ellipses, lines, free draw, text, text blocks, highlight, pixelate, numbered steps and crop, in seven colours, with undo and redo. Copy with ⇧⌘C, save with ⌘S, or pin the result.
+<details>
+<summary><b>Under the hood</b></summary>
+<br>
 
-Marks stay editable after you place them. Pick the Select tool (the pointer at the left of the toolbar), click a mark and drag it to move it, drag its handles to resize a box or re-aim an arrow, click a colour to recolour it, or press Delete to remove it. Every edit can be undone.
+- Swift, AppKit and SwiftUI on ScreenCaptureKit, Vision and AVFoundation. No third-party dependencies apart from Sparkle for updates.
+- Full-page capture works out which rows actually scroll, so fixed toolbars appear once. The cap is 40,000 px.
+- Recordings are H.264 MP4 at 30 fps; system audio and microphone mix into one AAC track. Password fields never show in the keystroke pill.
+- Building, test flags, recording these GIFs and cutting a release: [docs/DEVELOPING.md](docs/DEVELOPING.md).
+</details>
 
-<p align="center"><img src="docs/annotate.gif" alt="The annotation editor: a box and an arrow call out a card, a row is highlighted, numbered steps are placed, amounts are pixelated, then the box is selected, moved, resized and recoloured, and the image is put on a gradient background" width="800"></p>
-
-### Background and padding
-
-Click Background in the editor to put the shot on a soft gradient with padding, ready for a post, a deck or docs. Pick one of six backgrounds and set the padding with the slider. Screenshots get rounded corners and a gentle shadow; window shots keep their own. Copy, Save and Pin all use the framed version.
-
-<p align="center"><img src="docs/background.png" alt="A screenshot of the demo dashboard framed on a pink and orange gradient with padding, rounded corners and a soft shadow" width="680"></p>
-
-### Quick access thumbnail
-
-Every screenshot is saved straight to your save folder (Desktop/Glint Screenshots by default) and shows up as a thumbnail in the bottom-left corner. Drag it into any app, double-click to open it, or hover for Copy, Save, Annotate and Pin. Videos get Copy, Save, GIF and Show in Finder. Thumbnails dismiss themselves after 30 seconds unless you pin them; hovering pauses the countdown.
-
-### Pins
-
-Pin a screenshot and it floats above every window, docked under the edge widget. It follows the widget wherever you park it. Drag a pin to move it by hand, scroll to fade, right-click for Copy, Annotate, opacity and Lock (click-through). Double-click or Esc closes it.
-
-### History
-
-Everything is kept for 30 days in `~/Library/Application Support/Glint/History` and browsable from the menu. Screenshots also land in your save folder the moment you take them; Save copies videos and editor exports there too.
-
-## Details worth knowing
-
-- **Full-page capture** works out which rows actually scroll, so fixed toolbars and footers appear once. A fixed sidebar that has content in it will repeat down the image. The cap is 40,000 px.
-- **Scrolling capture** scrolls for you and stops at the end (this needs Accessibility access). Press Stop Auto to scroll by hand at any speed instead; it warns you if it loses track.
-- **Recording** is H.264 MP4 at 30 fps. Click rings are yellow for left and blue for right. The keystroke pill never shows password fields, because macOS blocks them. System audio and microphone are mixed into one AAC track.
-- **Permissions**: Screen Recording for everything. Accessibility for full-page capture, auto-scroll, keystroke display and the middle-click popup. Microphone only if you turn it on.
-- **Middle click**: while the popup is switched on, Glint takes the middle button system-wide. Turn it off from the menu bar (Middle-Click Action Ring) to get it back.
-
-## Build from source
-
-Needs Xcode and [XcodeGen](https://github.com/yonaskolb/XcodeGen).
-
-```bash
-xcodegen && xcodebuild -project Glint.xcodeproj -scheme Glint -derivedDataPath build build
-```
-
-The app lands in `build/Build/Products/Debug/Glint.app`. By default it is ad hoc signed, so no Apple developer account is needed. To sign with your own certificate, which keeps the Screen Recording grant across rebuilds, put it in `Config/Local.xcconfig` (see `Config/Signing.xcconfig`).
-
-Useful launch flags on `Glint.app/Contents/MacOS/Glint`:
-
-| Flag | What it does |
-|---|---|
-| `--selftest <dir>` | Runs capture, crop, every annotation tool, OCR, a short recording, GIF export and the stitching tests headlessly |
-| `--edit <png>` | Opens the editor on an image |
-| `--settings`, `--widget-open`, `--ring-open` | Open that surface at launch |
-| `--shots <dir>` | Renders every open Glint window to a PNG (how the images above were made) |
-
-### Cutting a release
-
-Bump `CFBundleShortVersionString` in `project.yml`, commit, then push a version tag:
-
-```bash
-git tag v0.1.6 && git push origin v0.1.6
-```
-
-The release workflow (`.github/workflows/release.yml`) builds on a macOS runner, signs with the Developer ID, has Apple notarize and staple it, signs the update for Sparkle, and publishes the zip. It then adds the appcast entry and pins the tag and checksum into `bin/RELEASE` and `bin/SHA256`, so the installer fetches exactly that release. `scripts/release.sh` does the build, sign and notarize steps locally.
-
-## Roadmap
+<details>
+<summary><b>Coming next</b></summary>
+<br>
 
 - Sticky footers and content sidebars in scrolling and full-page capture
 - Hide desktop icons while capturing
-- Clearer first run: permissions and where screenshots are saved
+- A clearer first run: permissions and where screenshots are saved
+</details>
+
+<br>
+
+<p align="center"><sub>Made by <a href="https://github.com/barkimchi">Bar Kimchi</a></sub></p>

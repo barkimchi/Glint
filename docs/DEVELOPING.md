@@ -1,0 +1,46 @@
+# Developing Glint
+
+## Build from source
+
+Needs Xcode and [XcodeGen](https://github.com/yonaskolb/XcodeGen).
+
+```bash
+xcodegen && xcodebuild -project Glint.xcodeproj -scheme Glint -derivedDataPath build build
+```
+
+The app lands in `build/Build/Products/Debug/Glint.app`. By default it is ad hoc signed, so no Apple developer account is needed. To sign with your own certificate, which keeps the Screen Recording grant across rebuilds, put it in `Config/Local.xcconfig` (see `Config/Signing.xcconfig`).
+
+## Launch flags
+
+Pass these to `Glint.app/Contents/MacOS/Glint`. Tests and demos log to `/tmp/glint-scrolltest.log`.
+
+| Flag | What it does |
+|---|---|
+| `--selftest <dir>` | Runs capture, crop, every annotation tool, OCR, a short recording, GIF export and the stitching tests headlessly |
+| `--editor-selftest <png>` | Select, move, resize, recolour, delete, undo and redo on the editor model, plus a framed export |
+| `--ring-selftest` | Long press, drag, remove, add and Done on the popup with synthetic mouse events (never touches your saved layout) |
+| `--scrolltest x,y,w,h` | Runs a real auto-scrolling capture on a screen region |
+| `--edit <png>` | Opens the editor on an image |
+| `--pin <png>` | Pins an image |
+| `--frame <in.png> <out.png> <preset>` | Writes the image framed on a background (sunrise, ocean, mint, grape, slate, paper) |
+| `--settings`, `--widget-open`, `--ring-open`, `--ring-edit` | Open that surface at launch |
+| `--shots <dir>` | Renders every open Glint window to a PNG |
+| `--demo <popup\|capture\|annotate> <scene.png> <x,y,w,h>` | Plays a scripted walkthrough on a stage window, for the README GIFs |
+
+## README GIFs
+
+```bash
+docs/demo/record.sh
+```
+
+Records the three walkthroughs from `--demo` on a stage window showing a made-up dashboard (`docs/demo/scene.png`), refuses any clip that is cut short or has a frame showing anything but the demo, and writes `docs/popup-edit.gif`, `docs/capture.gif` and `docs/annotate.gif`. Pass `"" popup` (or `capture`, `annotate`) to redo one. Keep hands off the Mac for the minute it runs.
+
+## Cutting a release
+
+Bump `CFBundleShortVersionString` and `CFBundleVersion` in `project.yml` and `version` in `package.json`, commit, then push a version tag:
+
+```bash
+git tag v0.1.9 && git push origin v0.1.9
+```
+
+The release workflow (`.github/workflows/release.yml`) builds on a macOS runner, signs with the Developer ID, has Apple notarize and staple it, signs the update for Sparkle, and publishes the zip. It then adds the appcast entry and pins the tag and checksum into `bin/RELEASE` and `bin/SHA256`, so the installer fetches exactly that release. `scripts/release.sh` does the build, sign and notarize steps locally.
