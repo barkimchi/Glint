@@ -559,7 +559,7 @@ enum RingSelfTest {
         }
         func order() -> String { RingLayout.items.map(\.key).joined(separator: ",") }
         var c0 = v.testCenter(0), c1 = NSPoint.zero, c3 = NSPoint.zero
-        ScrollTest.log("ring start:", order(), "editing:", v.testEditing)
+        ScrollTest.log("ring start:", order(), "editing:", v.testEditing, "bounds:", v.bounds, "c0:", c0, "win:", w.frame)
         v.mouseDown(with: ev(.leftMouseDown, c0)) // long press on tile 0
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.7) {
             ScrollTest.log("after long press, editing:", v.testEditing, "panel h:", Int(w.frame.height))
