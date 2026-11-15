@@ -1,0 +1,215 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Glint onboarding mockup</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root { --bg: #16171a; --panel: #1f2125; --ink: #f4f2ee; --mute: #9a9ca3; --line: #2c2e33; --amber: #ffb21a; --tile: #4a4d52; }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; gap: 28px; padding: 40px 16px;
+         background: radial-gradient(1200px 600px at 50% -10%, #2a2d33, #0d0e10 60%); color: var(--ink);
+         font: 15px/1.5 -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif; }
+  .switch { display: flex; gap: 8px; }
+  .switch button { background: #24262b; color: var(--mute); border: 1px solid var(--line); border-radius: 999px; padding: 7px 14px; font: inherit; font-size: 13px; cursor: pointer; }
+  .switch button.on { color: var(--ink); border-color: var(--amber); }
+
+  /* The window */
+  .win { width: min(760px, 100%); height: 500px; background: var(--bg); border: 1px solid #2f3136; border-radius: 16px;
+         box-shadow: 0 30px 80px rgba(0,0,0,.55); position: relative; overflow: hidden; }
+  .lights { position: absolute; top: 14px; left: 16px; display: flex; gap: 8px; z-index: 3; }
+  .lights i { width: 12px; height: 12px; border-radius: 50%; background: #3a3c41; }
+  .skip { position: absolute; top: 12px; right: 16px; z-index: 3; color: var(--mute); font-size: 13px; background: none; border: 0; cursor: pointer; }
+  .step { position: absolute; inset: 0; padding: 56px 56px 84px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+          text-align: center; opacity: 0; transform: translateY(14px) scale(.985); pointer-events: none; transition: opacity .45s ease, transform .55s cubic-bezier(.2,.8,.2,1); }
+  .step.on { opacity: 1; transform: none; pointer-events: auto; }
+  h1 { font-size: 40px; letter-spacing: -.03em; margin: 18px 0 6px; }
+  h2 { font-size: 28px; letter-spacing: -.02em; margin: 0 0 8px; }
+  p.lead { color: var(--mute); font-size: 16px; max-width: 460px; margin: 0 auto; }
+  .foot { position: absolute; bottom: 0; left: 0; right: 0; height: 72px; display: flex; align-items: center; justify-content: space-between; padding: 0 28px; z-index: 2; }
+  .dots { display: flex; gap: 7px; }
+  .dots i { width: 7px; height: 7px; border-radius: 50%; background: #3a3c41; transition: all .3s; }
+  .dots i.on { background: var(--amber); width: 20px; border-radius: 4px; }
+  .btn { background: var(--amber); color: #111; border: 0; border-radius: 10px; padding: 10px 20px; font: inherit; font-weight: 600; cursor: pointer; }
+  .btn.ghost { background: #2a2c31; color: var(--ink); }
+  .back { background: none; border: 0; color: var(--mute); font: inherit; cursor: pointer; visibility: hidden; }
+
+  /* 1 Welcome: the spark draws itself */
+  .logo { width: 112px; height: 112px; border-radius: 26px; background: var(--tile); display: grid; place-items: center; position: relative;
+          box-shadow: 0 0 0 0 rgba(255,178,26,.0); animation: glow 2.6s ease-in-out infinite; }
+  .logo svg { width: 70px; height: 70px; }
+  .spark { transform-origin: 50% 50%; animation: pop .9s cubic-bezier(.2,1.4,.3,1) both; }
+  .dot { animation: drop .5s .6s cubic-bezier(.2,1.6,.3,1) both; }
+  @keyframes pop { from { transform: scale(.2) rotate(-45deg); opacity: 0 } to { transform: none; opacity: 1 } }
+  @keyframes drop { from { transform: translateY(-14px); opacity: 0 } to { transform: none; opacity: 1 } }
+  @keyframes glow { 50% { box-shadow: 0 0 60px 6px rgba(255,178,26,.18) } }
+  .sweep { position: absolute; inset: 0; background: linear-gradient(110deg, transparent 40%, rgba(255,255,255,.06) 50%, transparent 60%);
+           background-size: 250% 100%; animation: sweep 3.2s linear infinite; pointer-events: none; }
+  @keyframes sweep { from { background-position: 150% 0 } to { background-position: -100% 0 } }
+
+  /* 2 Permission */
+  .perm { margin: 26px auto 0; width: 420px; max-width: 100%; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; text-align: left; display: flex; gap: 14px; align-items: center; }
+  .perm .ic { width: 40px; height: 40px; border-radius: 10px; background: #2b2e33; display: grid; place-items: center; flex: none; font-size: 20px; }
+  .perm b { display: block; }
+  .perm small { color: var(--mute); }
+  .status { margin-left: auto; font-size: 13px; font-weight: 600; white-space: nowrap; }
+  .status.wait { color: var(--mute); } .status.ok { color: #3ccf7a; }
+  .fine { color: #6f7279; font-size: 12.5px; margin-top: 14px; }
+
+  /* 3 Try it: a fake desktop you can drag on */
+  .stage { margin-top: 20px; width: 520px; max-width: 100%; height: 230px; border-radius: 12px; position: relative; overflow: hidden; cursor: crosshair;
+           background: url("../docs/demo/scene.png") center/cover; border: 1px solid var(--line); user-select: none; }
+  .stage .dim { position: absolute; inset: 0; background: rgba(0,0,0,.35); opacity: 0; transition: opacity .2s; }
+  .stage.frozen .dim { opacity: 1; }
+  .sel { position: absolute; border: 1.5px solid #2ec5c5; box-shadow: 0 0 0 9999px rgba(0,0,0,0); display: none; background: rgba(255,255,255,.04); }
+  .keys { display: inline-flex; gap: 6px; margin-top: 10px; }
+  .keys kbd { background: #2a2c31; border: 1px solid #3a3c41; border-bottom-width: 2px; border-radius: 7px; padding: 3px 9px; font: 600 14px -apple-system; color: var(--ink); }
+  .keys kbd.hit { background: var(--amber); color: #111; border-color: #c98a10; }
+  .thumb { position: absolute; left: 12px; bottom: 12px; width: 120px; height: 70px; border-radius: 8px; background: center/cover; border: 1.5px solid rgba(255,255,255,.7);
+           box-shadow: 0 8px 20px rgba(0,0,0,.4); transform: translateY(120px); transition: transform .5s cubic-bezier(.2,1.3,.3,1); }
+  .thumb.in { transform: none; }
+  .yay { color: #3ccf7a; font-weight: 600; height: 22px; margin-top: 10px; }
+
+  /* 4 Three ways */
+  .ways { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 24px; width: 100%; }
+  .way { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 14px; text-align: left; transition: transform .2s, border-color .2s; }
+  .way:hover { transform: translateY(-3px); border-color: #45484e; }
+  .way .media { height: 110px; border-radius: 9px; background: #121315 center/cover no-repeat; margin-bottom: 10px; display: grid; place-items: center; overflow: hidden; }
+  .way b { display: block; font-size: 14px; } .way small { color: var(--mute); font-size: 12.5px; }
+  .mini-ring { display: grid; grid-template-columns: repeat(3, 26px); gap: 5px; }
+  .mini-ring i { width: 26px; height: 26px; border-radius: 7px; background: var(--tile); animation: wob .28s ease-in-out infinite alternate; }
+  .mini-ring i:nth-child(odd) { animation-delay: .14s; }
+  @keyframes wob { from { transform: rotate(-3deg) } to { transform: rotate(3deg) } }
+  .edge { width: 86%; height: 26px; border-radius: 8px; background: var(--tile); display: flex; gap: 8px; align-items: center; justify-content: center; }
+  .edge i { width: 12px; height: 12px; border-radius: 3px; border: 2px solid #fff; }
+  .edge i:nth-child(2n) { border-color: var(--amber); }
+  .ax { margin-top: 14px; font-size: 13px; color: var(--mute); }
+  .ax a { color: var(--amber); text-decoration: none; }
+
+  /* 5 Done */
+  .menubar { position: absolute; top: 0; left: 0; right: 0; height: 30px; background: rgba(255,255,255,.04); display: flex; justify-content: flex-end; align-items: center; gap: 16px; padding-right: 70px; color: #777; font-size: 12px; }
+  .mb-glint { width: 18px; height: 18px; color: var(--ink); position: relative; }
+  .ping { position: absolute; inset: -8px; border-radius: 50%; border: 2px solid var(--amber); animation: ping 1.6s ease-out infinite; }
+  @keyframes ping { from { transform: scale(.5); opacity: 1 } to { transform: scale(1.8); opacity: 0 } }
+  .tips { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 22px; width: 460px; max-width: 100%; text-align: left; }
+  .tips div { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; font-size: 13.5px; }
+  .tips b { display: block; font-size: 13px; color: var(--amber); }
+
+  /* What's New */
+  .wn { width: min(520px, 100%); background: var(--bg); border: 1px solid #2f3136; border-radius: 16px; box-shadow: 0 30px 80px rgba(0,0,0,.55); overflow: hidden; display: none; }
+  .wn.on { display: block; animation: rise .5s cubic-bezier(.2,1,.3,1); }
+  @keyframes rise { from { opacity: 0; transform: translateY(18px) scale(.97) } }
+  .wn header { padding: 26px 28px 8px; }
+  .wn header small { color: var(--amber); font-weight: 600; letter-spacing: .06em; text-transform: uppercase; font-size: 11.5px; }
+  .wn header h2 { margin: 4px 0 0; }
+  .feat { display: flex; gap: 14px; padding: 14px 28px; align-items: center; opacity: 0; animation: in .5s forwards; }
+  .feat:nth-child(2) { animation-delay: .15s } .feat:nth-child(3) { animation-delay: .3s } .feat:nth-child(4) { animation-delay: .45s }
+  @keyframes in { from { opacity: 0; transform: translateX(-10px) } to { opacity: 1; transform: none } }
+  .feat .pic { width: 128px; height: 80px; border-radius: 10px; flex: none; background: #121315 center/cover; border: 1px solid var(--line); }
+  .feat b { display: block; } .feat small { color: var(--mute); }
+  .wn footer { display: flex; justify-content: space-between; align-items: center; padding: 16px 28px 22px; }
+  .wn footer a { color: var(--mute); font-size: 13px; text-decoration: none; }
+  .note { max-width: 760px; color: #7b7e85; font-size: 13px; text-align: center; }
+</style>
+
+<div class="switch">
+  <button class="on" data-view="tour">First launch</button>
+  <button data-view="new">After an update</button>
+</div>
+
+<div class="win" id="tour">
+  <div class="lights"><i></i><i></i><i></i></div>
+  <button class="skip" onclick="go(4)">Skip</button>
+
+  <section class="step on" data-i="0">
+    <div class="logo"><div class="sweep"></div>
+      <svg viewBox="0 0 100 100"><path class="spark" d="M50 10 C53 38 62 47 90 50 C62 53 53 62 50 90 C47 62 38 53 10 50 C38 47 47 38 50 10Z" fill="#F4F2EE"/>
+      <circle class="dot" cx="80" cy="20" r="7" fill="#FFB21A"/></svg></div>
+    <h1>Welcome to Glint</h1>
+    <p class="lead">Capture, mark up and share anything on your screen. One middle-click away.</p>
+  </section>
+
+  <section class="step" data-i="1">
+    <h2>One permission, and you're set</h2>
+    <p class="lead">macOS asks before any app can see your screen. Glint only looks when you capture, and nothing leaves your Mac.</p>
+    <div class="perm"><div class="ic">🖥️</div><div><b>Screen Recording</b><small>Needed to take screenshots and recordings</small></div>
+      <span class="status wait" id="permStatus">Not yet</span></div>
+    <div class="fine">Turn on Glint in the window that opens. This page updates on its own when it's done.</div>
+  </section>
+
+  <section class="step" data-i="2">
+    <h2>Try it now</h2>
+    <p class="lead">Press the shortcut, then drag over anything below.</p>
+    <div class="keys" id="keys"><kbd>⌃</kbd><kbd>⇧</kbd><kbd>4</kbd></div>
+    <div class="stage" id="stage"><div class="dim"></div><div class="sel" id="sel"></div><div class="thumb" id="thumb"></div></div>
+    <div class="yay" id="yay"></div>
+  </section>
+
+  <section class="step" data-i="3">
+    <h2>Three ways to capture</h2>
+    <p class="lead">Use whichever feels natural. They all do the same things.</p>
+    <div class="ways">
+      <div class="way"><div class="media"><div class="mini-ring"><i></i><i></i><i></i><i></i><i></i><i></i></div></div><b>Middle-click</b><small>A popup of actions right under your pointer. Long-press to rearrange.</small></div>
+      <div class="way"><div class="media"><div class="edge"><i></i><i></i><i></i><i></i><i></i><i></i></div></div><b>Edge widget</b><small>A slim tab on any screen edge. Hover to open.</small></div>
+      <div class="way"><div class="media" style="gap:6px;display:flex"><span class="keys"><kbd>⌃</kbd><kbd>⇧</kbd><kbd>2…9</kbd></span></div><b>Shortcuts</b><small>Every action has one. Change them in Settings.</small></div>
+    </div>
+    <div class="ax">The middle-click popup needs Accessibility access. <a href="#" onclick="return false">Turn it on</a></div>
+  </section>
+
+  <section class="step" data-i="4">
+    <div class="menubar"><span>Wi-Fi</span><span>Sat 7:41 PM</span><span class="mb-glint">✦<span class="ping"></span></span></div>
+    <h2>You're all set</h2>
+    <p class="lead">Glint lives in your menu bar. Look for the sparkle.</p>
+    <div class="tips">
+      <div><b>Saved automatically</b>Desktop/Glint Screenshots</div>
+      <div><b>Mark it up</b>Hover the thumbnail, then Annotate</div>
+      <div><b>Make it pretty</b>Background adds padding and a gradient</div>
+      <div><b>See this again</b>Menu bar › Welcome Tour</div>
+    </div>
+  </section>
+
+  <div class="foot">
+    <button class="back" id="back" onclick="go(cur-1)">Back</button>
+    <div class="dots" id="dots"><i class="on"></i><i></i><i></i><i></i><i></i></div>
+    <button class="btn" id="next" onclick="next()">Get Started</button>
+  </div>
+</div>
+
+<div class="wn" id="new">
+  <header><small>What's new in 0.1.9</small><h2>Edit marks, then make it pretty</h2></header>
+  <div class="feat"><div class="pic" style="background-image:url(../docs/annotate.gif)"></div><div><b>Marks stay editable</b><small>Pick the pointer tool to move, resize, recolour or delete anything you drew.</small></div></div>
+  <div class="feat"><div class="pic" style="background-image:url(../docs/background.png)"></div><div><b>Backgrounds</b><small>Padding, rounded corners and a gradient in one click.</small></div></div>
+  <div class="feat"><div class="pic" style="background-image:url(../docs/popup-edit.gif)"></div><div><b>Your popup, your apps</b><small>Add any app as a button. Long-press to rearrange.</small></div></div>
+  <footer><a href="#" onclick="return false">All updates</a><button class="btn" onclick="this.closest('.wn').classList.remove('on');setTimeout(()=>this.closest('.wn').classList.add('on'),600)">Got it</button></footer>
+</div>
+
+<p class="note">Mockup only: the real thing is a native window. Click through the steps. On "Try it now", drag over the dashboard to fake a capture. The permission step flips to granted after a moment, as the real one would when you turn Glint on.</p>
+
+<script>
+  let cur = 0;
+  const steps = [...document.querySelectorAll('.step')], dots = [...document.querySelectorAll('#dots i')];
+  const labels = ['Get Started', 'Open System Settings', 'Next', 'Next', 'Start using Glint'];
+  function go(i) {
+    cur = Math.max(0, Math.min(steps.length - 1, i));
+    steps.forEach((s, k) => s.classList.toggle('on', k === cur));
+    dots.forEach((d, k) => d.classList.toggle('on', k === cur));
+    document.getElementById('next').textContent = labels[cur];
+    document.getElementById('back').style.visibility = cur ? 'visible' : 'hidden';
+    if (cur === 1) setTimeout(() => { const s = document.getElementById('permStatus'); s.textContent = '✓ Granted'; s.className = 'status ok'; document.getElementById('next').textContent = 'Continue'; }, 1800);
+    if (cur === 2) { let k = 0; const ks = document.querySelectorAll('#keys kbd'); ks.forEach(x => x.classList.remove('hit'));
+      const t = setInterval(() => { ks[k]?.classList.add('hit'); if (++k > ks.length) { clearInterval(t); document.getElementById('stage').classList.add('frozen'); } }, 350); }
+  }
+  function next() { cur === steps.length - 1 ? go(0) : go(cur + 1); }
+  // Fake area capture on the stage
+  const stage = document.getElementById('stage'), sel = document.getElementById('sel');
+  let start = null;
+  stage.addEventListener('pointerdown', e => { const r = stage.getBoundingClientRect(); start = [e.clientX - r.left, e.clientY - r.top]; sel.style.display = 'block'; stage.classList.add('frozen'); });
+  stage.addEventListener('pointermove', e => { if (!start) return; const r = stage.getBoundingClientRect(); const x = e.clientX - r.left, y = e.clientY - r.top;
+    Object.assign(sel.style, { left: Math.min(x, start[0]) + 'px', top: Math.min(y, start[1]) + 'px', width: Math.abs(x - start[0]) + 'px', height: Math.abs(y - start[1]) + 'px' }); });
+  stage.addEventListener('pointerup', () => { if (!start) return; start = null; sel.style.display = 'none'; stage.classList.remove('frozen');
+    const th = document.getElementById('thumb'); th.style.backgroundImage = 'url(../docs/demo/scene.png)'; th.classList.add('in');
+    document.getElementById('yay').textContent = '✓ Nice. That\'s saved and waiting in the corner.'; });
+  document.querySelectorAll('.switch button').forEach(b => b.onclick = () => {
+    document.querySelectorAll('.switch button').forEach(x => x.classList.toggle('on', x === b));
+    document.getElementById('tour').style.display = b.dataset.view === 'tour' ? 'block' : 'none';
+    document.getElementById('new').classList.toggle('on', b.dataset.view === 'new');
+  });
+</script>

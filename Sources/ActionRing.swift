@@ -128,11 +128,13 @@ enum ActionRing {
     private static var panel: NSPanel?
     private static var outside: Any?
     static let tile: CGFloat = 52, gap: CGFloat = 8, tipSpace: CGFloat = 30
+    /// Side margin so the edit-mode minus badges, which overhang each tile's corner, are not clipped.
+    static let side: CGFloat = 10
 
     static func size(slots: Int, cols: Int) -> NSSize {
         let rows = CGFloat(max(1, (slots + cols - 1) / cols))
         // Wide enough for name tags even when there is a single column.
-        let w = max(CGFloat(cols) * tile + CGFloat(cols - 1) * gap, 2 * tile + gap)
+        let w = max(CGFloat(cols) * tile + CGFloat(cols - 1) * gap, 2 * tile + gap) + 2 * side
         return NSSize(width: w,
                       height: rows * tile + (rows - 1) * gap + tipSpace * 2)
     }
@@ -255,7 +257,8 @@ final class RingView: NSView {
     private func center(_ i: Int) -> NSPoint {
         let step = ActionRing.tile + ActionRing.gap
         let col = i % cols, row = i / cols
-        return NSPoint(x: ActionRing.tile / 2 + CGFloat(col) * step,
+        let gridW = CGFloat(cols) * ActionRing.tile + CGFloat(cols - 1) * ActionRing.gap
+        return NSPoint(x: (bounds.width - gridW) / 2 + ActionRing.tile / 2 + CGFloat(col) * step,
                        y: ActionRing.tipSpace + ActionRing.tile / 2 + CGFloat(rows - 1 - row) * step)
     }
 
