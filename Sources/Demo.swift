@@ -289,3 +289,49 @@ enum EditorSelfTest {
         NSApp.terminate(nil)
     }
 }
+
+/// `--tour --tour-capture-test -tour.startStep 2`: with the tour on its "Try it" step, runs a real area
+/// capture through the normal pipeline (overlay, selection, save, quick access) with a synthetic drag over
+/// the tour window, then logs whether the step saw it. Logs the saved files so the test can remove them.
+@MainActor
+enum TourCaptureTest {
+    static func run() {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+            guard let tour = NSApp.windows.first(where: { $0.isVisible && $0.frame.width == 760 }) else {
+                ScrollTest.log("tour-capture: no tour window"); return
+            }
+            let before = Date()
+            ScrollTest.log("tour-capture: screen recording allowed =", CGPreflightScreenCaptureAccess())
+            AppController.shared.perform(.area)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
+                guard let ow = NSApp.windows.first(where: { $0 is OverlayWindow && $0.isVisible }),
+                      let sv = ow.contentView as? SelectionView else { ScrollTest.log("tour-capture: no overlay"); return }
+                func ev(_ t: NSEvent.EventType, _ g: NSPoint) -> NSEvent {
+                    NSEvent.mouseEvent(with: t, location: ow.convertPoint(fromScreen: g), modifierFlags: [], timestamp: ProcessInfo.processInfo.systemUptime,
+                                       windowNumber: ow.windowNumber, context: nil, eventNumber: 0, clickCount: 1, pressure: 1)!
+                }
+                // Drag over the middle of the tour window (only Glint's own UI is in the shot).
+                let a = NSPoint(x: tour.frame.minX + 200, y: tour.frame.minY + 160)
+                let b = NSPoint(x: tour.frame.maxX - 200, y: tour.frame.maxY - 160)
+                sv.mouseDown(with: ev(.leftMouseDown, a))
+                for k in 1...10 {
+                    let t = CGFloat(k) / 10
+                    sv.mouseDragged(with: ev(.leftMouseDragged, NSPoint(x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t)))
+                }
+                sv.mouseUp(with: ev(.leftMouseUp, b))
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                    let fm = FileManager.default
+                    let dirs = [Store.savedDir, URL(fileURLWithPath: NSHomeDirectory() + "/Library/Application Support/Glint/History")]
+                    for d in dirs {
+                        for u in (try? fm.contentsOfDirectory(at: d, includingPropertiesForKeys: [.creationDateKey])) ?? [] {
+                            if let c = try? u.resourceValues(forKeys: [.creationDateKey]).creationDate, c > before {
+                                ScrollTest.log("tour-capture: saved", u.path)
+                            }
+                        }
+                    }
+                    ScrollTest.log("tour-capture: done")
+                }
+            }
+        }
+    }
+}

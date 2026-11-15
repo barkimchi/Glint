@@ -25,6 +25,8 @@ Pass these to `Glint.app/Contents/MacOS/Glint`. Tests and demos log to `/tmp/gli
 | `--frame <in.png> <out.png> <preset>` | Writes the image framed on a background (sunrise, ocean, mint, grape, slate, paper) |
 | `--settings`, `--widget-open`, `--ring-open`, `--ring-edit` | Open that surface at launch |
 | `--tour`, `--whats-new` | Open the welcome tour or the What's New card (add `-tour.startStep N` to start the tour at step N) |
+| `--tour --tour-capture-test -tour.startStep 2` | Runs a real area capture while the tour sits on "Try it" and logs whether the step reacted (logs the saved files so you can remove them) |
+| `-onboarding.simulateNewUser YES`, `-onboarding.simulateVersion 0.2.0` | Normal launch, but decide tour / What's New / nothing as a new user or for that version. Logs the decision and writes nothing to your settings |
 | `--shots <dir>` | Renders every open Glint window to a PNG |
 | `--demo <popup\|capture\|annotate> <scene.png> <x,y,w,h>` | Plays a scripted walkthrough on a stage window, for the README GIFs |
 

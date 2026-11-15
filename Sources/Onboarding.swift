@@ -9,33 +9,51 @@ enum Onboarding {
     private static let d = UserDefaults.standard
     static let didCapture = Notification.Name("GlintDidCapture")
 
-    static var version: String { Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0" }
+    // Test hooks, passed as launch arguments (never saved): -onboarding.simulateNewUser YES,
+    // -onboarding.simulateVersion 0.2.0. While either is set nothing is written to the user's settings.
+    private static var simulating: Bool { d.object(forKey: "onboarding.simulateNewUser") != nil || d.string(forKey: "onboarding.simulateVersion") != nil }
+    private static var simNew: Bool { d.bool(forKey: "onboarding.simulateNewUser") }
+
+    static var version: String {
+        d.string(forKey: "onboarding.simulateVersion") ?? Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0"
+    }
     private static var tourDone: Bool {
-        get { d.bool(forKey: "onboarding.done") }
-        set { d.set(newValue, forKey: "onboarding.done") }
+        get { simNew ? false : d.bool(forKey: "onboarding.done") }
+        set { if !simulating { d.set(newValue, forKey: "onboarding.done") } }
     }
     private static var lastSeen: String? {
-        get { d.string(forKey: "whatsnew.lastSeen") }
-        set { d.set(newValue, forKey: "whatsnew.lastSeen") }
+        get { simNew ? nil : d.string(forKey: "whatsnew.lastSeen") }
+        set { if !simulating { d.set(newValue, forKey: "whatsnew.lastSeen") } }
     }
 
     /// Someone who used Glint before the tour existed: they get What's New, not the tour.
     private static var isExistingUser: Bool {
-        ["hotkeys.v1", "edge.side", "edge.enabled", "ring.enabled", "ring.order", "rec.systemAudio"].contains { d.object(forKey: $0) != nil }
+        if simNew { return false }
+        return ["hotkeys.v1", "edge.side", "edge.enabled", "ring.enabled", "ring.order", "rec.systemAudio"].contains { d.object(forKey: $0) != nil }
             || !Store.items().isEmpty
     }
 
     /// Called at launch. Returns true when it showed something (so launch skips other prompts).
     @discardableResult
     static func showIfNeeded() -> Bool {
+        let shown = decide()
+        if simulating { ScrollTest.log("onboarding: version \(version) new=\(simNew) -> \(shown)") }
+        switch shown {
+        case "tour": showTour(); return true
+        case "whatsnew": showWhatsNew(); return true
+        default: return false
+        }
+    }
+
+    private static func decide() -> String {
         if !tourDone {
-            if isExistingUser { tourDone = true } else { showTour(); return true }
+            if isExistingUser { tourDone = true } else { return "tour" }
         }
         if lastSeen != version {
-            if WhatsNew.notes[version] != nil { showWhatsNew(); return true }
+            if WhatsNew.notes[version] != nil { return "whatsnew" }
             lastSeen = version
         }
-        return false
+        return "none"
     }
 
     // MARK: Windows
@@ -97,6 +115,10 @@ enum Onboarding {
     }
 
     private static func present(_ w: NSWindow) {
+        if simulating || CommandLine.arguments.contains("--tour") {
+            let f = w.frame, ph = NSScreen.screens.first?.frame.height ?? 0
+            ScrollTest.log("window", Int(f.minX), Int(ph - f.maxY), Int(f.width), Int(f.height)) // top-left origin, for recordings
+        }
         w.alphaValue = 0
         w.makeKeyAndOrderFront(nil)
         NSApp.activate()
@@ -359,7 +381,10 @@ private struct TryItStep: View {
         }
         .animation(.spring(response: 0.45, dampingFraction: 0.6), value: captured)
         .onAppear { animateKeys() }
-        .onReceive(NotificationCenter.default.publisher(for: Onboarding.didCapture)) { _ in captured = true }
+        .onReceive(NotificationCenter.default.publisher(for: Onboarding.didCapture)) { _ in
+            captured = true
+            ScrollTest.log("tour: try-it step saw the capture")
+        }
     }
 
     private func animateKeys() {
