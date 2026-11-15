@@ -54,4 +54,4 @@ only="${2:-}"
 gif() { [ -z "$only" ] || [ "$only" = "$1" ]; }
 gif popup && { rec popup 25; docs/demo/to-gif.sh "$T/popup.mov" docs/popup-edit.gif 560 15 640:440:280:160 17; }
 gif capture && { rec capture 9; docs/demo/to-gif.sh "$T/capture.mov" docs/capture.gif 800 15; }
-gif annotate && { rec annotate 11; docs/demo/to-gif.sh "$T/annotate.mov" docs/annotate.gif 800 15; }
+gif annotate && { rec annotate 17; docs/demo/to-gif.sh "$T/annotate.mov" docs/annotate.gif 800 15; }

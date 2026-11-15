@@ -214,6 +214,78 @@ enum Demo {
             await pause(0.45)
         }
         await draw(.pixelate, CGPoint(x: 1040, y: 465), CGPoint(x: 1130, y: 700), secs: 0.5)
-        await pause(1.6)
+        await pause(0.6)
+        // Edit a placed mark: select the box, move it to the next card, stretch it, recolor it.
+        m.tool = .select
+        await pause(0.5)
+        guard let box = m.marks.firstIndex(where: { $0.tool == .rect }) else { return }
+        m.selected = m.marks[box].id
+        await pause(0.6)
+        let orig = m.marks[box]
+        m.beginEdit()
+        for i in 1...36 {
+            m.replaceSelected(orig.moved(by: CGVector(dx: -281 * CGFloat(i) / 36, dy: 0)))
+            try? await Task.sleep(nanoseconds: 16_000_000)
+        }
+        await pause(0.4)
+        let moved = m.marks[box]
+        m.beginEdit()
+        for i in 1...24 {
+            let k = CGFloat(i) / 24
+            m.replaceSelected(moved.reshaped(handle: 2, to: CGPoint(x: moved.rect.maxX + 40 * k, y: moved.rect.maxY + 20 * k)))
+            try? await Task.sleep(nanoseconds: 16_000_000)
+        }
+        await pause(0.5)
+        m.color = .systemBlue; m.recolorSelected(.systemBlue)
+        await pause(0.8)
+        m.selected = nil
+        // Put it on a background with padding.
+        m.backdrop = .ocean
+        await pause(1.0)
+        m.backdrop = .sunrise
+        await pause(1.4)
+    }
+}
+
+/// `--editor-selftest <png>`: exercises select/move/reshape/recolor/delete/undo on the editor model and
+/// renders the image framed on a background to /tmp/glint-framed.png. Logs to /tmp/glint-scrolltest.log.
+@MainActor
+enum EditorSelfTest {
+    static func run(_ path: String) {
+        guard let cg = Store.cgImage(URL(fileURLWithPath: path)) else { ScrollTest.log("editor: no image"); NSApp.terminate(nil); return }
+        let m = EditorModel(image: cg)
+        func log(_ s: String) { ScrollTest.log("editor:", s) }
+        m.commit(Mark(tool: .rect, a: CGPoint(x: 100, y: 100), b: CGPoint(x: 300, y: 200), color: .systemRed))
+        m.commit(Mark(tool: .arrow, a: CGPoint(x: 400, y: 400), b: CGPoint(x: 600, y: 450), color: .systemRed))
+        m.commit(Mark(tool: .counter, a: CGPoint(x: 700, y: 300), b: CGPoint(x: 700, y: 300), color: .systemRed, number: 1))
+        log("hit box edge: \(String(describing: m.hit(CGPoint(x: 100, y: 150)))) (want 0)")
+        log("hit box middle: \(String(describing: m.hit(CGPoint(x: 200, y: 150)))) (want nil: boxes are hit on their outline)")
+        log("hit arrow: \(String(describing: m.hit(CGPoint(x: 500, y: 425)))) (want 1)")
+        log("hit counter: \(String(describing: m.hit(CGPoint(x: 705, y: 298)))) (want 2)")
+        log("hit empty: \(String(describing: m.hit(CGPoint(x: 900, y: 700)))) (want nil)")
+        m.selected = m.marks[0].id
+        m.beginEdit(); m.replaceSelected(m.marks[0].moved(by: CGVector(dx: 50, dy: 20)))
+        log("moved box a=\(m.marks[0].a) b=\(m.marks[0].b) (want 150,120 / 350,220)")
+        m.beginEdit(); m.replaceSelected(m.marks[0].reshaped(handle: 2, to: CGPoint(x: 500, y: 300)))
+        log("resized box rect=\(m.marks[0].rect) (want x150 y120 w350 h180)")
+        m.selected = m.marks[1].id
+        m.beginEdit(); m.replaceSelected(m.marks[1].reshaped(handle: 1, to: CGPoint(x: 650, y: 380)))
+        log("re-aimed arrow b=\(m.marks[1].b) (want 650,380)")
+        m.recolorSelected(.systemBlue)
+        log("arrow color blue: \(m.marks[1].color == .systemBlue)")
+        m.deleteSelected()
+        log("after delete: \(m.marks.map(\.tool.rawValue)) (want rect,counter)")
+        m.undo(); log("undo delete: \(m.marks.map(\.tool.rawValue)) (want rect,arrow,counter)")
+        m.undo(); log("undo recolor: arrow blue=\(m.marks[1].color == .systemBlue) (want false)")
+        m.undo(); m.undo()
+        log("undo resize+move: box a=\(m.marks[0].rect.origin) size=\(m.marks[0].rect.size) (want 150,120 200x100 after one more undo)")
+        m.undo(); log("undo move: box rect=\(m.marks[0].rect) (want x100 y100 w200 h100)")
+        m.redo(); log("redo move: box origin=\(m.marks[0].rect.origin) (want 150,120)")
+        m.backdrop = .ocean
+        if let out = m.render() {
+            log("framed \(out.width)x\(out.height) from \(cg.width)x\(cg.height), pad \(Int(m.pad)), alpha edges \(m.hasAlphaEdges)")
+            try? NSBitmapImageRep(cgImage: out).representation(using: .png, properties: [:])?.write(to: URL(fileURLWithPath: "/tmp/glint-framed.png"))
+        }
+        NSApp.terminate(nil)
     }
 }

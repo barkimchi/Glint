@@ -81,7 +81,7 @@ A thin tab that hugs the border of your screen. Hover and it opens into the same
 Esc cancels any selection. Change or clear any shortcut in Settings: click it and press the new keys.
 
 <p align="center"><img src="docs/settings-window.png" alt="Glint Settings: shortcuts, recording options and save folder" width="380"></p>
-<p align="center"><sub>Rendering; new installs default to Desktop/Glint Screenshots.</sub></p>
+<p align="center"><sub>Settings with the default shortcuts. Go-to button opens picks the app for the Go-to button.</sub></p>
 
 ## After the capture
 
@@ -89,7 +89,15 @@ Esc cancels any selection. Change or clear any shortcut in Settings: click it an
 
 Arrows, boxes, ellipses, lines, free draw, text, text blocks, highlight, pixelate, numbered steps and crop, in seven colours, with undo and redo. Copy with ⇧⌘C, save with ⌘S, or pin the result.
 
-<p align="center"><img src="docs/annotate.gif" alt="The annotation editor: a box and an arrow call out a card, a row is highlighted, numbered steps are placed, and amounts are pixelated" width="800"></p>
+Marks stay editable after you place them. Pick the Select tool (the pointer at the left of the toolbar), click a mark and drag it to move it, drag its handles to resize a box or re-aim an arrow, click a colour to recolour it, or press Delete to remove it. Every edit can be undone.
+
+<p align="center"><img src="docs/annotate.gif" alt="The annotation editor: a box and an arrow call out a card, a row is highlighted, numbered steps are placed, amounts are pixelated, then the box is selected, moved, resized and recoloured, and the image is put on a gradient background" width="800"></p>
+
+### Background and padding
+
+Click Background in the editor to put the shot on a soft gradient with padding, ready for a post, a deck or docs. Pick one of six backgrounds and set the padding with the slider. Screenshots get rounded corners and a gentle shadow; window shots keep their own. Copy, Save and Pin all use the framed version.
+
+<p align="center"><img src="docs/background.png" alt="A screenshot of the demo dashboard framed on a pink and orange gradient with padding, rounded corners and a soft shadow" width="680"></p>
 
 ### Quick access thumbnail
 
@@ -143,7 +151,5 @@ The release workflow (`.github/workflows/release.yml`) builds on a macOS runner,
 ## Roadmap
 
 - Sticky footers and content sidebars in scrolling and full-page capture
-- Moving and editing annotations after they are placed
-- Background and padding for window shots
 - Hide desktop icons while capturing
 - Clearer first run: permissions and where screenshots are saved
