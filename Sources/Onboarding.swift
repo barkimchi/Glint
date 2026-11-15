@@ -38,9 +38,11 @@ enum Onboarding {
     static func showIfNeeded() -> Bool {
         let shown = decide()
         if simulating { ScrollTest.log("onboarding: version \(version) new=\(simNew) -> \(shown)") }
+        // Wait a moment: right after a Sparkle relaunch macOS can place a new window behind other apps
+        // or on another Space.
         switch shown {
-        case "tour": showTour(); return true
-        case "whatsnew": showWhatsNew(); return true
+        case "tour": DispatchQueue.main.asyncAfter(deadline: .now() + 1) { showTour() }; return true
+        case "whatsnew": DispatchQueue.main.asyncAfter(deadline: .now() + 1) { showWhatsNew() }; return true
         default: return false
         }
     }
@@ -114,13 +116,20 @@ enum Onboarding {
         return w
     }
 
+    /// Lets System Settings sit above the tour while the user grants a permission.
+    static func lowerTour() { tourWindow?.level = .normal }
+
     private static func present(_ w: NSWindow) {
+        // Float above other apps on the current Space; a background-launched app can't take focus.
+        w.level = .floating
+        w.collectionBehavior = [.moveToActiveSpace, .fullScreenAuxiliary]
         if simulating || CommandLine.arguments.contains("--tour") {
             let f = w.frame, ph = NSScreen.screens.first?.frame.height ?? 0
             ScrollTest.log("window", Int(f.minX), Int(ph - f.maxY), Int(f.width), Int(f.height)) // top-left origin, for recordings
         }
         w.alphaValue = 0
-        w.makeKeyAndOrderFront(nil)
+        w.orderFrontRegardless()
+        w.makeKey()
         NSApp.activate()
         NSAnimationContext.runAnimationGroup { $0.duration = 0.35; w.animator().alphaValue = 1 }
     }
@@ -332,6 +341,7 @@ private struct PermissionStep: View {
     }
 
     private func ask() {
+        Onboarding.lowerTour()
         if !asked { CGRequestScreenCaptureAccess() }
         asked = true
         if let u = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture") { NSWorkspace.shared.open(u) }
@@ -439,6 +449,7 @@ private struct WaysStep: View {
                 } else {
                     Text("The middle-click popup needs Accessibility access.").foregroundStyle(Tone.mute)
                     Button("Turn it on") {
+                        Onboarding.lowerTour()
                         let opts = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true] as CFDictionary
                         _ = AXIsProcessTrustedWithOptions(opts)
                     }
