@@ -2,8 +2,8 @@ import AppKit
 import ScreenCaptureKit
 
 enum CaptureMode {
-    case area, window, ocr, record, scroll, page
-    var picksWindow: Bool { self == .window || self == .page }
+    case area, window, ocr, record, scroll, page, keepOnTop
+    var picksWindow: Bool { self == .window || self == .page || self == .keepOnTop }
 }
 
 /// A display frozen at the moment the hotkey was pressed. Selecting on a still image
@@ -164,6 +164,7 @@ final class SelectionView: NSView {
         switch mode {
         case .area: return "Drag to capture  ·  Esc to cancel"
         case .window: return "Click a window  ·  Esc to cancel"
+        case .keepOnTop: return "Click a window to keep it on top  ·  Esc to cancel"
         case .ocr: return "Drag over text to copy it  ·  Esc to cancel"
         case .record: return "Drag an area to record, or press Return for the whole screen  ·  Esc to cancel"
         case .page: return "Click a page to capture all of it, top to bottom  ·  Esc to cancel"

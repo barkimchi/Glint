@@ -24,12 +24,13 @@ enum AppTarget {
 }
 
 enum HotkeyAction: String, CaseIterable, Identifiable, Codable {
-    case area, window, fullscreen, scroll, page, ocr, record, claude
+    case area, window, fullscreen, scroll, page, ocr, record, claude, keepOnTop
     var id: String { rawValue }
     var title: String {
         switch self {
         case .area: return "Capture Area"
         case .window: return "Capture Window"
+        case .keepOnTop: return "Keep Window on Top"
         case .fullscreen: return "Capture Fullscreen"
         case .scroll: return "Scrolling Capture"
         case .page: return "Capture Full Page"
@@ -42,6 +43,7 @@ enum HotkeyAction: String, CaseIterable, Identifiable, Codable {
         switch self {
         case .area: return "rectangle.dashed"
         case .window: return "macwindow"
+        case .keepOnTop: return "pin.square"
         case .fullscreen: return "display"
         case .scroll: return "arrow.up.and.down.square"
         case .page: return "doc.viewfinder"
@@ -55,6 +57,7 @@ enum HotkeyAction: String, CaseIterable, Identifiable, Codable {
         switch self {
         case .area: return Shortcut(keyCode: UInt32(kVK_ANSI_4), modifiers: cs, key: "4")
         case .window: return Shortcut(keyCode: UInt32(kVK_ANSI_5), modifiers: cs, key: "5")
+        case .keepOnTop: return Shortcut(keyCode: UInt32(kVK_ANSI_0), modifiers: cs, key: "0")
         case .fullscreen: return Shortcut(keyCode: UInt32(kVK_ANSI_3), modifiers: cs, key: "3")
         case .scroll: return Shortcut(keyCode: UInt32(kVK_ANSI_7), modifiers: cs, key: "7")
         case .page: return Shortcut(keyCode: UInt32(kVK_ANSI_8), modifiers: cs, key: "8")

@@ -27,6 +27,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if args.contains("--ring-open") { ActionRing.show(); if let f = ActionRing.frame { ScrollTest.log("ring frame", Int(f.minX), Int(f.minY), Int(f.width), Int(f.height)) } } // for screenshots of the ring
         if args.contains("--ring-selftest") { RingSelfTest.run() }
         if args.contains("--tour-capture-test") { TourCaptureTest.run() }
+        if let i = args.firstIndex(of: "--toptest"), i + 1 < args.count { TopPinTest.run(args[i + 1]) }
         if let i = args.firstIndex(of: "--frame"), i + 3 < args.count { // --frame in.png out.png <preset>: README stills
             if let cg = Store.cgImage(URL(fileURLWithPath: args[i + 1])) {
                 let m = EditorModel(image: cg)
@@ -123,6 +124,7 @@ final class AppController: NSObject, NSMenuDelegate {
         case .ocr: grabText()
         case .record: toggleRecording()
         case .claude: goToClaude()
+        case .keepOnTop: keepWindowOnTop()
         }
     }
 
@@ -145,6 +147,22 @@ final class AppController: NSObject, NSMenuDelegate {
         menu.addItem(item("Capture History…", nil, #selector(openHistory)))
         menu.addItem(item("Open Save Folder", nil, #selector(openSaved)))
         menu.addItem(item("Unlock Pinned Screenshots", nil, #selector(unlockPins)))
+        menu.addItem(item("Keep Window on Top…", .keepOnTop, #selector(keepWindowOnTop)))
+        if !TopPins.all.isEmpty {
+            let top = NSMenuItem(title: "Windows on Top", action: nil, keyEquivalent: "")
+            let sub = NSMenu()
+            for (i, p) in TopPins.all.enumerated() {
+                let it = NSMenuItem(title: "Unlock \(p.name)", action: #selector(unlockTopPin(_:)), keyEquivalent: "")
+                it.target = self; it.tag = i
+                sub.addItem(it)
+            }
+            sub.addItem(.separator())
+            let allItem = NSMenuItem(title: "Unlock All", action: #selector(unlockAllTopPins), keyEquivalent: "")
+            allItem.target = self
+            sub.addItem(allItem)
+            top.submenu = sub
+            menu.addItem(top)
+        }
         menu.addItem(.separator())
         let settings = item("Settings…", nil, #selector(openSettings))
         settings.keyEquivalent = ","
@@ -191,6 +209,11 @@ final class AppController: NSObject, NSMenuDelegate {
 
     @objc func captureArea() { select(.area) }
     @objc func captureWindow() { select(.window) }
+    @objc func keepWindowOnTop() { select(.keepOnTop) }
+    @objc func unlockTopPin(_ m: NSMenuItem) {
+        if TopPins.all.indices.contains(m.tag) { TopPins.unlock(TopPins.all[m.tag]) }
+    }
+    @objc func unlockAllTopPins() { TopPins.unlockAll() }
     @objc func grabText() { select(.ocr) }
     /// Brings the chosen app (Claude unless changed in Settings) to the front, launching it if needed.
     @objc func goToClaude() {
@@ -252,6 +275,8 @@ final class AppController: NSObject, NSMenuDelegate {
     private func handle(_ r: SelectionResult, mode: CaptureMode) {
         switch r {
         case .cancel: return
+        case .window(let w) where mode == .keepOnTop:
+            TopPins.lock(w)
         case .window(let w):
             Task {
                 do { deliver(try await Capture.window(w)) } catch { fail(error) }

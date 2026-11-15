@@ -248,6 +248,12 @@ enum EdgeGlyph {
                 d.stroke()
                 red.setFill()
                 NSBezierPath(ovalIn: NSRect(x: 24.6, y: 6.6, width: 4.8, height: 4.8)).fill()
+            case .keepOnTop: // a window with an amber pin on top
+                outline(NSRect(x: 8.5, y: 8.5, width: 16, height: 14), 2.5)
+                red.setFill()
+                NSBezierPath(ovalIn: NSRect(x: 20.5, y: 20.5, width: 8, height: 8)).fill()
+                let stem = NSBezierPath(); stem.lineWidth = 2.4; stem.lineCapStyle = .round
+                stem.move(to: NSPoint(x: 24.5, y: 21)); stem.line(to: NSPoint(x: 24.5, y: 16)); red.setStroke(); stem.stroke()
             case .window:
                 outline(NSRect(x: 9.5, y: 10.5, width: 17, height: 15), 2.5)
                 red.setFill(); chip(NSRect(x: 12.5, y: 20.5, width: 11, height: 3), 1.5)
