@@ -85,6 +85,7 @@ Arrows, boxes, highlights, numbered steps, text, pixelate and crop. Every mark s
 **Quick access** · every shot waits in the corner: drag it anywhere, or hover for Copy, Annotate and Pin.<br>
 **Pins** · float a screenshot above every window, fade it, or make it click-through.<br>
 **History** · 30 days of captures, one click from the menu bar.<br>
+**Welcome tour** · a quick guided start on first launch, and a What's New card after each update.<br>
 **Private** · no account, no cloud. Everything stays on your Mac.
 
 <br>

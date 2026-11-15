@@ -83,7 +83,21 @@ final class AppController: NSObject, NSMenuDelegate {
         MiddleClick.start()
 
         Store.prune()
-        if !CGPreflightScreenCaptureAccess() { _ = Permissions.ensure() }
+        // New users get the welcome tour (it handles the permission); updaters get What's New.
+        let args = CommandLine.arguments
+        if args.contains("--tour") { Onboarding.showTour() }
+        else if args.contains("--whats-new") { Onboarding.showWhatsNew() }
+        else if args.contains(where: { $0.hasPrefix("--") }) { } // test and demo runs stay quiet
+        else if !Onboarding.showIfNeeded(), !CGPreflightScreenCaptureAccess() { _ = Permissions.ensure() }
+    }
+
+    /// Blinks the menu bar icon so a new user can find it.
+    func flashStatusItem() {
+        for i in 0..<6 {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.4 + Double(i) * 0.28) { [weak self] in
+                self?.statusItem.button?.highlight(i % 2 == 0)
+            }
+        }
     }
 
     // MARK: Hotkeys
@@ -147,6 +161,8 @@ final class AppController: NSObject, NSMenuDelegate {
         if !CGPreflightScreenCaptureAccess() {
             menu.addItem(item("Grant Screen Recording Access…", nil, #selector(askPermission)))
         }
+        menu.addItem(item("Welcome Tour…", nil, #selector(openTour)))
+        menu.addItem(item("What's New…", nil, #selector(openWhatsNew)))
         let updates = NSMenuItem(title: "Check for Updates…", action: #selector(SPUStandardUpdaterController.checkForUpdates(_:)), keyEquivalent: "")
         updates.target = updaterController
         menu.addItem(updates)
@@ -189,6 +205,8 @@ final class AppController: NSObject, NSMenuDelegate {
     @objc func toggleRecording() { recorder != nil ? stopRecording() : select(.record) }
     @objc func openHistory() { HistoryWindow.show() }
     @objc func openSettings() { SettingsWindow.show() }
+    @objc func openTour() { Onboarding.showTour() }
+    @objc func openWhatsNew() { Onboarding.showWhatsNew() }
     @objc func openSaved() { NSWorkspace.shared.open(Store.savedDir) }
     @objc func unlockPins() { Pins.unlockAll() }
     @objc func askPermission() { _ = Permissions.ensure() }
@@ -275,6 +293,7 @@ final class AppController: NSObject, NSMenuDelegate {
         // Every screenshot also lands in the save folder right away.
         if Store.exportCopy(url) == nil { Toast.show("Could not save a copy to your save folder") }
         QuickAccess.show(url: url, isVideo: false)
+        NotificationCenter.default.post(name: Onboarding.didCapture, object: nil)
     }
 
     private func fail(_ error: Error) {
