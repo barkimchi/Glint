@@ -43,7 +43,7 @@ Records the three walkthroughs from `--demo` on a stage window showing a made-up
 
 ## Cutting a release
 
-Bump `CFBundleShortVersionString` and `CFBundleVersion` in `project.yml` and `version` in `package.json`. If the release has something worth showing, add an entry for the new version to `WhatsNew.notes` in `Sources/Onboarding.swift` (media goes in `Sources/Resources/WhatsNew/`); people updating see it once. New users get the welcome tour instead. Commit, then push a version tag:
+Bump `CFBundleShortVersionString` and `CFBundleVersion` in `project.yml` and `version` in `package.json`. If the release has something worth showing, add an entry for the new version to `WhatsNew.notes` in `Sources/Onboarding.swift` (media goes in `Sources/Resources/WhatsNew/`); people updating see it on their first two launches of that version. New users get the welcome tour instead. Commit, then push a version tag:
 
 ```bash
 git tag v0.1.9 && git push origin v0.1.9

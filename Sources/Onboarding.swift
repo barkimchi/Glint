@@ -3,7 +3,8 @@ import ApplicationServices
 import SwiftUI
 
 /// First-run welcome tour and the per-version What's New card.
-/// New users get the tour once; people updating get What's New once per version that has notes.
+/// New users get the tour once; people updating get What's New on the first two launches of each
+/// version that has notes (one showing is easy to miss right after an update relaunch).
 @MainActor
 enum Onboarding {
     private static let d = UserDefaults.standard
@@ -24,6 +25,16 @@ enum Onboarding {
     private static var lastSeen: String? {
         get { simNew ? nil : d.string(forKey: "whatsnew.lastSeen") }
         set { if !simulating { d.set(newValue, forKey: "whatsnew.lastSeen") } }
+    }
+    /// How many launches have shown What's New for `version` so far.
+    static let launchesToShow = 2
+    private static var simShows = 0
+    private static var shows: Int {
+        get { simulating ? simShows : (d.string(forKey: "whatsnew.showsVersion") == version ? d.integer(forKey: "whatsnew.shows") : 0) }
+        set {
+            if simulating { simShows = newValue; return }
+            d.set(version, forKey: "whatsnew.showsVersion"); d.set(newValue, forKey: "whatsnew.shows")
+        }
     }
 
     /// Someone who used Glint before the tour existed: they get What's New, not the tour.
@@ -52,7 +63,11 @@ enum Onboarding {
             if isExistingUser { tourDone = true } else { return "tour" }
         }
         if lastSeen != version {
-            if WhatsNew.notes[version] != nil { return "whatsnew" }
+            if WhatsNew.notes[version] != nil, shows < launchesToShow {
+                shows += 1
+                if shows >= launchesToShow { lastSeen = version }
+                return "whatsnew"
+            }
             lastSeen = version
         }
         return "none"
@@ -86,12 +101,12 @@ enum Onboarding {
         guard let notes = WhatsNew.notes[version] ?? WhatsNew.notes.max(by: { $0.key.compare($1.key, options: .numeric) == .orderedAscending })?.value else { return }
         if let w = newWindow { w.makeKeyAndOrderFront(nil); NSApp.activate(); return }
         let w = makeWindow(size: NSSize(width: 540, height: 150 + CGFloat(notes.features.count) * 112))
+        // Closing doesn't mark it seen: decide() counts launches, so it comes back once more.
         w.contentView = NSHostingView(rootView: WhatsNewView(version: version, notes: notes) {
-            lastSeen = version
             newWindow?.close(); newWindow = nil
         })
         newWindow = w
-        onClose(w) { newWindow = nil; lastSeen = version } // closing counts as seen
+        onClose(w) { newWindow = nil }
         present(w)
     }
 
@@ -144,6 +159,10 @@ struct WhatsNew {
 
     /// Notes per version. Add an entry when a release has something worth showing; versions without one stay quiet.
     static let notes: [String: WhatsNew] = [
+        "0.2.2": WhatsNew(headline: "Pin a window, swipe the edges", features: [
+            Feature(title: "Keep a window on top", body: "Press Control-Shift-0 and click any window. It stays above everything until you unlock it from the menu bar.", media: "sf:pin.square.fill"),
+            Feature(title: "Trackpad edge controls", body: "Slide one finger along the left edge for volume, the right edge for brightness. Hold a top corner to run an action. Turn it on in Glint Settings.", media: "sf:hand.point.up.left.fill"),
+        ]),
         "0.2.0": WhatsNew(headline: "Edit marks, then make it pretty", features: [
             Feature(title: "Marks stay editable", body: "Pick the pointer tool to move, resize, recolour or delete anything you drew.", media: "edit-marks.gif"),
             Feature(title: "Backgrounds", body: "Padding, rounded corners and a gradient in one click. Find it in the editor.", media: "backgrounds.png"),
@@ -205,6 +224,14 @@ private struct BundleMedia: NSViewRepresentable {
         v.wantsLayer = true
         v.layer?.cornerRadius = 10
         v.layer?.masksToBounds = true
+        if name.hasPrefix("sf:") { // an SF Symbol on a tile, for features without a recording
+            v.imageScaling = .scaleNone
+            v.image = NSImage(systemSymbolName: String(name.dropFirst(3)), accessibilityDescription: nil)?
+                .withSymbolConfiguration(.init(pointSize: 40, weight: .regular))
+            v.contentTintColor = NSColor(srgbRed: 1, green: 0.698, blue: 0.102, alpha: 1)
+            v.layer?.backgroundColor = NSColor(white: 1, alpha: 0.05).cgColor
+            return v
+        }
         let base = (name as NSString).deletingPathExtension, ext = (name as NSString).pathExtension
         if let url = Bundle.main.url(forResource: base, withExtension: ext, subdirectory: "WhatsNew")
             ?? Bundle.main.url(forResource: base, withExtension: ext) {
