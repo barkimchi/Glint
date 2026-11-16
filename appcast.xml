@@ -125,5 +125,18 @@
                  length="1993866"
                  type="application/octet-stream" />
     </item>
+    <item>
+      <title>Glint 0.2.3-beta.3</title>
+      <link>https://github.com/barkimchi/glint-app/releases/tag/v0.2.3-beta.3</link>
+      <sparkle:version>12.3</sparkle:version>
+      <sparkle:shortVersionString>0.2.3-beta.3</sparkle:shortVersionString>
+      <sparkle:channel>beta</sparkle:channel>
+      <sparkle:releaseNotesLink>https://github.com/barkimchi/glint-app/releases/tag/v0.2.3-beta.3</sparkle:releaseNotesLink>
+      <pubDate>Mon, 16 Nov 2026 20:48:03 +0000</pubDate>
+      <enclosure url="https://github.com/barkimchi/glint-app/releases/download/v0.2.3-beta.3/Glint.zip"
+                 sparkle:edSignature="jX4Jv6+MJdO8RZKcV2j+tcJlSzPxDZ+FGlCEgf4PUylo0TtE6vp+m4/cxcCairk8D8yQzC8TJggEO1veRwVmBw=="
+                 length="2078973"
+                 type="application/octet-stream" />
+    </item>
   </channel>
 </rss>
