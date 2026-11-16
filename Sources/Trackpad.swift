@@ -378,25 +378,38 @@ enum TrackpadControls {
             g.handle([])
             ScrollTest.log("trackpad-selftest \(name): \(log.isEmpty ? "nothing" : log.joined(separator: ", "))")
         }
+        /// Frames 1...n of one finger moving by (dx, dy) per frame from (x0, y0).
+        func moves(_ id: Int32, _ n: Int, _ x0: Float, _ y0: Float, dx: Float, dy: Float, t0: Double = 0,
+                   size: Float = 0.8, major: Float = 8, minor: Float = 7) -> [[Touch]] {
+            var out: [[Touch]] = []
+            for i in 1...n {
+                let f = Float(i)
+                let time: Double = t0 + Double(i) * 0.016
+                out.append(t(id, x0 + f * dx, y0 + f * dy, .moved, time, size: size, major: major, minor: minor))
+            }
+            return out
+        }
         // Left edge slide up 0.3
-        run("left slide up", [t(1, 0.04, 0.3, .began, 0)] + (1...10).map { t(1, 0.04, 0.3 + Float($0) * 0.03, .moved, Double($0) * 0.016) } + [t(1, 0.04, 0.6, .ended, 0.2)])
+        run("left slide up", [t(1, 0.04, 0.3, .began, 0)] + moves(1, 10, 0.04, 0.3, dx: 0, dy: 0.03) + [t(1, 0.04, 0.6, .ended, 0.2)])
         // Right edge slide down
-        run("right slide down", [t(2, 0.96, 0.6, .began, 0)] + (1...8).map { t(2, 0.96, 0.6 - Float($0) * 0.025, .moved, Double($0) * 0.016) } + [t(2, 0.96, 0.4, .ended, 0.2)])
+        run("right slide down", [t(2, 0.96, 0.6, .began, 0)] + moves(2, 8, 0.96, 0.6, dx: 0, dy: -0.025) + [t(2, 0.96, 0.4, .ended, 0.2)])
         // Middle of the pad: ordinary cursor movement, must do nothing
-        run("middle move", [t(3, 0.5, 0.5, .began, 0)] + (1...10).map { t(3, 0.5, 0.5 + Float($0) * 0.03, .moved, Double($0) * 0.016) })
+        run("middle move", [t(3, 0.5, 0.5, .began, 0)] + moves(3, 10, 0.5, 0.5, dx: 0, dy: 0.03))
         // Horizontal swipe starting at the left edge: not a slide
-        run("edge horizontal swipe", [t(4, 0.04, 0.5, .began, 0)] + (1...10).map { t(4, 0.04 + Float($0) * 0.04, 0.5 + Float($0) * 0.002, .moved, Double($0) * 0.016) })
-        // Resting finger in the left edge: nothing
-        run("edge resting finger", [t(5, 0.04, 0.5, .began, 0)] + (1...30).map { t(5, 0.04, 0.5 + Float($0 % 2) * 0.002, .moved, Double($0) * 0.016) })
+        run("edge horizontal swipe", [t(4, 0.04, 0.5, .began, 0)] + moves(4, 10, 0.04, 0.5, dx: 0.04, dy: 0.002))
+        // Resting finger in the left edge, jittering a hair: nothing
+        var resting: [[Touch]] = [t(5, 0.04, 0.5, .began, 0)]
+        for i in 1...30 { resting.append(t(5, 0.04, i % 2 == 0 ? 0.5 : 0.502, .moved, Double(i) * 0.016)) }
+        run("edge resting finger", resting)
         // Top-right corner hold
-        run("top-right hold", [t(6, 0.95, 0.95, .began, 0)] + (1...40).map { t(6, 0.95, 0.95, .moved, Double($0) * 0.016) })
+        run("top-right hold", [t(6, 0.95, 0.95, .began, 0)] + moves(6, 40, 0.95, 0.95, dx: 0, dy: 0))
         // Top-left corner hold that drifts: no fire
-        run("top-left drift", [t(7, 0.05, 0.95, .began, 0)] + (1...40).map { t(7, 0.05 + Float($0) * 0.002, 0.95, .moved, Double($0) * 0.016) })
+        run("top-left drift", [t(7, 0.05, 0.95, .began, 0)] + moves(7, 40, 0.05, 0.95, dx: 0.002, dy: 0))
         // Palm on the edge
-        run("edge palm", [t(8, 0.04, 0.3, .began, 0, size: 2.6, major: 20, minor: 9)] + (1...10).map { t(8, 0.04, 0.3 + Float($0) * 0.03, .moved, Double($0) * 0.016, size: 2.6, major: 20, minor: 9) })
+        run("edge palm", [t(8, 0.04, 0.3, .began, 0, size: 2.6, major: 20, minor: 9)] + moves(8, 10, 0.04, 0.3, dx: 0, dy: 0.03, size: 2.6, major: 20, minor: 9))
         // Slide right after typing: suppressed
         g.lastKeyTime = 5.0
-        run("slide while typing", [t(9, 0.04, 0.3, .began, 5.1)] + (1...10).map { t(9, 0.04, 0.3 + Float($0) * 0.03, .moved, 5.1 + Double($0) * 0.016) })
+        run("slide while typing", [t(9, 0.04, 0.3, .began, 5.1)] + moves(9, 10, 0.04, 0.3, dx: 0, dy: 0.03, t0: 5.1))
         g.lastKeyTime = -1000
         // Two fingers at the edge (macOS scroll): nothing
         log = []
