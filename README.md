@@ -80,12 +80,24 @@ Arrows, boxes, highlights, numbered steps, text, pixelate and crop. Every mark s
 
 <br>
 
+## 🪄 New in 0.2.2
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/whats-new.png" alt="Glint's What's New card for 0.2.2: Keep a window on top, and trackpad edge controls" width="100%"></td>
+    <td width="50%">
+      <b>Keep a window on top.</b> Press ⌃⇧0 and click any window. It stays above everything, even other apps, until you unlock it from the menu bar.<br><br>
+      <b>Trackpad edges.</b> Slide one finger down the left edge for volume, the right edge for brightness. Hold a top corner to open the popup or capture. Turn it on in Settings.
+    </td>
+  </tr>
+</table>
+
+<br>
+
 ## 📌 And the small things
 
 **Quick access** · every shot waits in the corner: drag it anywhere, or hover for Copy, Annotate and Pin.<br>
 **Pins** · float a screenshot above every window, fade it, or make it click-through.<br>
-**Keep on top** · lock any app's window above everything else (a live view that hands off to the real window when you click it). ⌃⇧0.<br>
-**Trackpad edges** · slide one finger along the left edge for volume, the right edge for brightness; hold a top corner to run an action. Off until you turn it on in Settings.<br>
 **History** · 30 days of captures, one click from the menu bar.<br>
 **Welcome tour** · a quick guided start on first launch, and a What's New card after each update.<br>
 **Private** · no account, no cloud. Everything stays on your Mac.
@@ -110,7 +122,7 @@ Arrows, boxes, highlights, numbered steps, text, pixelate and crop. Every mark s
 
 Esc cancels any selection. Change any shortcut in Settings.
 
-<p align="center"><img src="docs/settings-window.png" alt="Glint Settings: shortcuts, the Go-to app, recording options and save folder" width="360"></p>
+<p align="center"><img src="docs/settings-window.png" alt="Glint Settings: shortcuts, the Go-to app, trackpad edge controls, recording options and save folder" width="360"></p>
 </details>
 
 <details>
@@ -119,7 +131,7 @@ Esc cancels any selection. Change any shortcut in Settings.
 
 - **Install**: unzip, drag `Glint.app` to Applications, open it. Releases are signed and notarized by Apple.
 - **Updates**: Glint checks on its own and verifies each update before installing. The menu has Check for Updates too.
-- **Permissions**: Screen Recording for everything. Accessibility for full-page and scrolling capture, keystrokes and the middle-click popup. Microphone only if you turn it on.
+- **Permissions**: Screen Recording for everything. Accessibility for full-page and scrolling capture, keystrokes and the middle-click popup. Microphone only if you turn it on. Trackpad edges need nothing extra.
 - **Middle click**: while the popup is on, Glint takes the middle button system-wide. Turn it off from the menu bar.
 - **Files**: screenshots save to Desktop/Glint Screenshots by default. History lives in `~/Library/Application Support/Glint/History`.
 </details>
@@ -140,7 +152,6 @@ Esc cancels any selection. Change any shortcut in Settings.
 
 - Sticky footers and content sidebars in scrolling and full-page capture
 - Hide desktop icons while capturing
-- A clearer first run: permissions and where screenshots are saved
 </details>
 
 <br>
