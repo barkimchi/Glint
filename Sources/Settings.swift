@@ -310,7 +310,7 @@ struct SettingsView: View {
                 }
                 GridRow {
                     Text("Sensitivity")
-                    Slider(value: $tpSens, in: 0.6...2.5).frame(width: 200)
+                    Slider(value: $tpSens, in: 0.6...3.5).frame(width: 200)
                         .onChange(of: tpSens) { _, v in TrackpadSettings.sensitivity = v }
                 }
                 GridRow {

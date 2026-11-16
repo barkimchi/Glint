@@ -41,7 +41,7 @@ enum TrackpadSettings {
     static let cornerChoices: [(String, String)] = [("off", "Off"), ("popup", "Open the popup")] + HotkeyAction.allCases.map { ($0.rawValue, $0.title) }
     /// How far a full slide along the edge moves the value (1 = the whole height for 0 to 100%).
     static var sensitivity: Double {
-        get { d.object(forKey: "trackpad.sensitivity") as? Double ?? 1.3 }
+        get { d.object(forKey: "trackpad.sensitivity") as? Double ?? 1.56 }
         set { d.set(newValue, forKey: "trackpad.sensitivity") }
     }
     /// Width of each edge zone as a fraction of the trackpad width.
