@@ -138,6 +138,8 @@ final class TopPin: NSObject {
         panel.setFrame(f, display: true)
     }
 
+    func testBringForward() { bringForward() }
+
     /// Activates the owning app and raises this exact window, then hides the live view over it.
     private func bringForward() {
         panel.orderOut(nil)
@@ -290,12 +292,13 @@ enum TopPinTest {
         Task {
             try? await Task.sleep(nanoseconds: 800_000_000)
             guard let c = try? await Capture.content(),
-                  let w = Capture.pickableWindows(c).first(where: { $0.owningApplication?.applicationName == app }) else {
+                  let w = Capture.pickableWindows(c).first(where: { $0.owningApplication?.applicationName == app || $0.title == app }) else {
                 ScrollTest.log("toptest: no window for", app); NSApp.terminate(nil); return
             }
             TopPins.lock(w)
             for i in 1...12 {
                 try? await Task.sleep(nanoseconds: 1_000_000_000)
+                if i == 7 { ScrollTest.log("toptest: clicking the live view (AX trusted: \(AXIsProcessTrusted()))"); TopPins.all.first?.testBringForward() }
                 guard let p = TopPins.all.first else { ScrollTest.log("toptest: pin gone at", i); break }
                 let f = TopPin.currentFrame(w.windowID) ?? .zero
                 let panel = NSApp.windows.first { $0 is TopPinPanel }

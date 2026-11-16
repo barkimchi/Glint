@@ -20,6 +20,7 @@ Pass these to `Glint.app/Contents/MacOS/Glint`. Tests and demos log to `/tmp/gli
 | `--editor-selftest <png>` | Select, move, resize, recolour, delete, undo and redo on the editor model, plus a framed export |
 | `--ring-selftest` | Long press, drag, remove, add and Done on the popup with synthetic mouse events (never touches your saved layout) |
 | `--scrolltest x,y,w,h` | Runs a real auto-scrolling capture on a screen region |
+| `--toptest <App or window title>` | Locks that window on top and logs frames, placement and visibility for 12 s (clicks the live view at 7 s) |
 | `--edit <png>` | Opens the editor on an image |
 | `--pin <png>` | Pins an image |
 | `--frame <in.png> <out.png> <preset>` | Writes the image framed on a background (sunrise, ocean, mint, grape, slate, paper) |

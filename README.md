@@ -84,6 +84,7 @@ Arrows, boxes, highlights, numbered steps, text, pixelate and crop. Every mark s
 
 **Quick access** · every shot waits in the corner: drag it anywhere, or hover for Copy, Annotate and Pin.<br>
 **Pins** · float a screenshot above every window, fade it, or make it click-through.<br>
+**Keep on top** · lock any app's window above everything else (a live view that hands off to the real window when you click it). ⌃⇧0.<br>
 **History** · 30 days of captures, one click from the menu bar.<br>
 **Welcome tour** · a quick guided start on first launch, and a What's New card after each update.<br>
 **Private** · no account, no cloud. Everything stays on your Mac.
@@ -104,6 +105,7 @@ Arrows, boxes, highlights, numbered steps, text, pixelate and crop. Every mark s
 | ⌃⇧2 | Grab text |
 | ⌃⇧6 | Start or stop a recording |
 | ⌃⇧9 | Go to Claude (or the app you pick) |
+| ⌃⇧0 | Keep a window on top |
 
 Esc cancels any selection. Change any shortcut in Settings.
 
