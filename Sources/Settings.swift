@@ -315,7 +315,7 @@ struct SettingsView: View {
                 }
                 GridRow {
                     Text("Edge zone width")
-                    Slider(value: $tpZone, in: 0.05...0.16).frame(width: 200)
+                    Slider(value: $tpZone, in: 0.05...0.22).frame(width: 200)
                         .onChange(of: tpZone) { _, v in TrackpadSettings.zone = v; TrackpadControls.apply(); tpStatus = TrackpadControls.status }
                 }
             }

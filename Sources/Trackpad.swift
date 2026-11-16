@@ -46,7 +46,7 @@ enum TrackpadSettings {
     }
     /// Width of each edge zone as a fraction of the trackpad width.
     static var zone: Double {
-        get { d.object(forKey: "trackpad.zone") as? Double ?? 0.09 }
+        get { d.object(forKey: "trackpad.zone") as? Double ?? 0.108 }
         set { d.set(newValue, forKey: "trackpad.zone") }
     }
 }
@@ -153,7 +153,7 @@ final class EdgeGestures {
     var onSlideEnded: ((Edge) -> Void)?
     var onCornerHold: ((Corner) -> Void)?
 
-    var zone: Float = 0.09
+    var zone: Float = 0.108
     let cornerSize: Float = 0.14
     let deadZone: Float = 0.012     // travel before a slide counts, so a resting finger does nothing
     let holdTime: Double = 0.45
