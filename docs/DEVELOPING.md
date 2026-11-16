@@ -19,6 +19,7 @@ Pass these to `Glint.app/Contents/MacOS/Glint`. Tests and demos log to `/tmp/gli
 | `--selftest <dir>` | Runs capture, crop, every annotation tool, OCR, a short recording, GIF export and the stitching tests headlessly |
 | `--editor-selftest <png>` | Select, move, resize, recolour, delete, undo and redo on the editor model, plus a framed export |
 | `--ring-selftest` | Long press, drag, remove, add and Done on the popup with synthetic mouse events (never touches your saved layout) |
+| `--trackpad-selftest` | Feeds made-up touches through the trackpad edge gestures and logs what fired, plus whether a trackpad was found |
 | `--scrolltest x,y,w,h` | Runs a real auto-scrolling capture on a screen region |
 | `--pickertest <window title>` | Runs the real Keep on Top action through the picker and clicks that window |
 | `--toptest <App or window title>` | Locks that window on top and logs frames, placement and visibility for 12 s (clicks the live view at 7 s) |
@@ -49,6 +50,8 @@ git tag v0.1.9 && git push origin v0.1.9
 ```
 
 The release workflow (`.github/workflows/release.yml`) builds on a macOS runner, signs with the Developer ID, has Apple notarize and staple it, signs the update for Sparkle, and publishes the zip. It then adds the appcast entry and pins the tag and checksum into `bin/RELEASE` and `bin/SHA256`, so the installer fetches exactly that release. `scripts/release.sh` does the build, sign and notarize steps locally.
+
+For a test build, push a tag with a hyphen (`v0.2.2-beta.2`). It is signed and notarized the same way but lands as a draft pre-release, with no appcast entry and no installer pin. Leave the version in `project.yml` alone so the real release is still offered as an update.
 
 ## Diagnostic log
 

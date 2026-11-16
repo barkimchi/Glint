@@ -350,6 +350,13 @@ enum TrackpadControls {
         if let k = keyMonitor { NSEvent.removeMonitor(k); keyMonitor = nil }
     }
 
+    /// One line for Settings: whether Glint is reading a trackpad right now.
+    static var status: String {
+        guard TrackpadSettings.enabled else { return "Off" }
+        let n = MultitouchReader.deviceCount
+        return n == 0 ? "No trackpad found on this Mac" : "Listening to \(n == 1 ? "the trackpad" : "\(n) trackpads")"
+    }
+
     private static func control(_ e: EdgeGestures.Edge) -> EdgeControl { e == .left ? TrackpadSettings.leftEdge : TrackpadSettings.rightEdge }
 
     // MARK: Self-test with made-up touches

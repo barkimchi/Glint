@@ -231,6 +231,7 @@ struct SettingsView: View {
     @State private var tpTR = TrackpadSettings.topRight
     @State private var tpSens = TrackpadSettings.sensitivity
     @State private var tpZone = TrackpadSettings.zone
+    @State private var tpStatus = TrackpadControls.status
     @State private var appIcon = AppTarget.icon
 
     var body: some View {
@@ -269,7 +270,11 @@ struct SettingsView: View {
             Divider()
             Text("Trackpad").font(.headline)
             Toggle("Trackpad edge controls", isOn: $tpOn)
-                .onChange(of: tpOn) { _, v in TrackpadSettings.enabled = v; TrackpadControls.apply() }
+                .onChange(of: tpOn) { _, v in TrackpadSettings.enabled = v; TrackpadControls.apply(); tpStatus = TrackpadControls.status }
+            if tpOn {
+                Label(tpStatus, systemImage: tpStatus.hasPrefix("No") ? "exclamationmark.triangle" : "hand.point.up.left")
+                    .font(.callout).foregroundStyle(tpStatus.hasPrefix("No") ? .orange : .secondary)
+            }
             Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 8) {
                 GridRow {
                     Text("Slide left edge").frame(width: 150, alignment: .leading)
@@ -299,7 +304,7 @@ struct SettingsView: View {
                 GridRow {
                     Text("Edge zone width")
                     Slider(value: $tpZone, in: 0.05...0.16).frame(width: 200)
-                        .onChange(of: tpZone) { _, v in TrackpadSettings.zone = v; TrackpadControls.apply() }
+                        .onChange(of: tpZone) { _, v in TrackpadSettings.zone = v; TrackpadControls.apply(); tpStatus = TrackpadControls.status }
                 }
             }
             .disabled(!tpOn)
