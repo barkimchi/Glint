@@ -23,10 +23,12 @@ final class ThumbState: ObservableObject {
     private var dismissWork: DispatchWorkItem?
     private var hideWork: DispatchWorkItem?
 
-    /// Unpinned thumbnails dismiss themselves; the file stays in the save folder.
-    /// Hovering pauses the countdown, leaving restarts it.
-    func armDismiss(after delay: TimeInterval = 30) {
+    /// Thumbnails can dismiss themselves after the time picked in Settings (by default they stay
+    /// until closed); the file stays in the save folder. Hovering pauses the countdown, leaving restarts it.
+    func armDismiss() {
         dismissWork?.cancel()
+        let delay = TimeInterval(CornerSettings.hideAfter)
+        guard delay > 0 else { dismissWork = nil; return }
         let w = DispatchWorkItem { [weak self] in
             guard let self, let panel else { return }
             MainActor.assumeIsolated { QuickAccess.close(panel) }
@@ -107,17 +109,29 @@ enum QuickAccess {
         layout()
     }
 
-    /// Adds a screenshot to the pile, newest on top, or starts a pile.
+    /// Adds a screenshot to the pile, newest on top, or starts a pile. Adds run one after another, so
+    /// two quick captures can't each start their own pile while their thumbnails are still rendering.
+    private static var pileQueue: Task<Void, Never>?
     static func addToPile(_ url: URL) {
-        Task {
+        let previous = pileQueue
+        pileQueue = Task {
+            await previous?.value
+            await addNow(url)
+        }
+    }
+
+    private static func addNow(_ url: URL) async {
+        do {
             let image = await Thumbs.make(url, size: 440) ?? NSImage(contentsOf: url) ?? NSImage()
             let item = PileItem(url: url, image: image)
             if let pile {
                 pile.model.items.append(item)
                 resizePile()
                 pile.state.armDismiss()
+                Diag.log("pile: added \(url.lastPathComponent), now \(pile.model.items.count)")
                 return
             }
+            Diag.log("pile: new pile with \(url.lastPathComponent)")
             let model = PileModel(), state = ThumbState()
             model.items = [item]
             let p = NSPanel(contentRect: NSRect(origin: .zero, size: PileLayout.size(model, maxWidth: maxPileWidth)),

@@ -401,6 +401,12 @@ enum PileTest {
             QuickAccess.show(url: urls[0], isVideo: false)
             try? await Task.sleep(for: .milliseconds(500))
             log("fresh pile count=\(QuickAccess.pileURLs.count)")
+            // Three captures in the same instant still make one pile, in order.
+            if let p = QuickAccess.pilePanel { QuickAccess.close(p) }
+            for u in urls { QuickAccess.show(url: u, isVideo: false) }
+            try? await Task.sleep(for: .milliseconds(1500))
+            log("rapid count=\(QuickAccess.pileURLs.count) order=\(QuickAccess.pileURLs.map(\.lastPathComponent)) piles=\(NSApp.windows.filter { $0.isVisible && $0 is NSPanel && $0.frame.width >= 200 }.count)")
+            log("hideAfter=\(CornerSettings.hideAfter)")
             try? FileManager.default.removeItem(at: tmp)
             NSApp.terminate(nil)
         }

@@ -159,6 +159,15 @@ final class HotkeySettings: ObservableObject {
 }
 
 /// Audio options for screen recordings, stored in UserDefaults.
+/// How long screenshots wait in the corner. 0 means until you close them.
+enum CornerSettings {
+    static let choices: [(Int, String)] = [(0, "Until I close them"), (30, "30 seconds"), (60, "1 minute"), (300, "5 minutes")]
+    static var hideAfter: Int {
+        get { UserDefaults.standard.object(forKey: "corner.hideAfter") as? Int ?? 0 }
+        set { UserDefaults.standard.set(newValue, forKey: "corner.hideAfter") }
+    }
+}
+
 enum RecordingSettings {
     static var systemAudio: Bool {
         get { UserDefaults.standard.bool(forKey: "rec.systemAudio") }
@@ -225,6 +234,7 @@ struct SettingsView: View {
     @State private var message = "Click a shortcut, then press the new key combination."
     @State private var monitor: Any?
     @State private var saveDir = Store.savedDir
+    @State private var hideAfter = CornerSettings.hideAfter
     @State private var highlightClicks = RecordingSettings.highlightClicks
     @State private var showKeys = RecordingSettings.showKeystrokes
     @State private var axMissing = RecordingSettings.showKeystrokes && !AXIsProcessTrusted()
@@ -363,6 +373,16 @@ struct SettingsView: View {
                     }.controlSize(.small)
                 }
             }
+            Divider()
+            Text("Corner Thumbnails").font(.headline)
+            HStack {
+                Text("Keep screenshots in the corner").frame(width: 200, alignment: .leading)
+                Picker("", selection: $hideAfter) { ForEach(CornerSettings.choices, id: \.0) { Text($0.1).tag($0.0) } }
+                    .labelsHidden().frame(width: 180)
+                    .onChange(of: hideAfter) { _, v in CornerSettings.hideAfter = v }
+            }
+            Text("Screenshots taken while one is still showing stack into a pile. Drag the pile to send them all.")
+                .font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
             Divider()
             Text("Save Folder").font(.headline)
             HStack(spacing: 8) {
