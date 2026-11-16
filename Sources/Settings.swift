@@ -197,11 +197,19 @@ enum SettingsWindow {
 
     static func show() {
         let w = window ?? {
-            let w = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 460, height: 740),
-                             styleMask: [.titled, .closable], backing: .buffered, defer: false)
-            w.title = "Glint Settings"
+            // Taller than a laptop screen with every section, so it scrolls and fits the screen.
+            let screenH = (NSScreen.main?.visibleFrame.height ?? 900) - 40
+            let w = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 460, height: min(1120, screenH)),
+                             styleMask: [.titled, .closable, .resizable], backing: .buffered, defer: false)
+            // Test builds carry their tag (added by the release workflow) so you can tell them apart.
+            let beta = Bundle.main.object(forInfoDictionaryKey: "GlintBetaTag") as? String
+            w.title = beta.map { "Glint Settings (\($0))" } ?? "Glint Settings"
             w.isReleasedWhenClosed = false
-            w.contentView = NSHostingView(rootView: SettingsView())
+            let host = NSHostingView(rootView: SettingsView())
+            host.sizingOptions = []
+            w.contentView = host
+            w.contentMinSize = NSSize(width: 460, height: 360)
+            w.contentMaxSize = NSSize(width: 460, height: 1120)
             w.center()
             window = w
             return w
@@ -235,6 +243,10 @@ struct SettingsView: View {
     @State private var appIcon = AppTarget.icon
 
     var body: some View {
+        ScrollView { content }.frame(width: 460)
+    }
+
+    private var content: some View {
         VStack(alignment: .leading, spacing: 14) {
             Text("Keyboard Shortcuts").font(.headline)
             Grid(alignment: .leading, horizontalSpacing: 16, verticalSpacing: 10) {
@@ -373,7 +385,7 @@ struct SettingsView: View {
             }
         }
         .padding(20)
-        .frame(width: 460)
+        .frame(width: 460, alignment: .leading)
         .onDisappear { stopRecording() }
     }
 

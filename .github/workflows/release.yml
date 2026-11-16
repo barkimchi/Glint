@@ -29,6 +29,9 @@ jobs:
         run: xcodegen
       - name: Build
         run: xcodebuild -project Glint.xcodeproj -scheme Glint -configuration Release -derivedDataPath build build
+      - name: Label test build
+        if: ${{ contains(github.ref_name, '-') }}
+        run: /usr/libexec/PlistBuddy -c "Add :GlintBetaTag string ${{ github.ref_name }}" build/Build/Products/Release/Glint.app/Contents/Info.plist
       - name: Set up signing keychain
         env:
           DEVID_P12_B64: ${{ secrets.DEVID_P12_B64 }}
