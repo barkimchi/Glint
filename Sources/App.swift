@@ -74,7 +74,7 @@ final class AppController: NSObject, NSMenuDelegate {
     private var clickOverlay: ClickOverlay?
     private var recordTimer: Timer?
     private var recordStart = Date()
-    private let updaterController = SPUStandardUpdaterController(startingUpdater: true, updaterDelegate: nil, userDriverDelegate: nil)
+    private let updaterController = SPUStandardUpdaterController(startingUpdater: true, updaterDelegate: BetaUpdates.delegate, userDriverDelegate: nil)
 
     func start() {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)

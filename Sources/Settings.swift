@@ -3,6 +3,7 @@ import AVFoundation
 import ApplicationServices
 import Carbon.HIToolbox
 import SwiftUI
+import Sparkle
 import UniformTypeIdentifiers
 
 /// Every action that can have a global shortcut.
@@ -159,6 +160,20 @@ final class HotkeySettings: ObservableObject {
 }
 
 /// Audio options for screen recordings, stored in UserDefaults.
+/// Beta builds come through the same update feed, marked with Sparkle's "beta" channel.
+/// A beta build opts in by default, so installing one keeps you on betas until you turn it off.
+enum BetaUpdates {
+    static var isBetaBuild: Bool { Bundle.main.object(forInfoDictionaryKey: "GlintBetaTag") != nil }
+    static var enabled: Bool {
+        get { UserDefaults.standard.object(forKey: "updates.beta") as? Bool ?? isBetaBuild }
+        set { UserDefaults.standard.set(newValue, forKey: "updates.beta") }
+    }
+    static let delegate = Delegate()
+    final class Delegate: NSObject, SPUUpdaterDelegate {
+        func allowedChannels(for updater: SPUUpdater) -> Set<String> { BetaUpdates.enabled ? ["beta"] : [] }
+    }
+}
+
 /// How long screenshots wait in the corner. 0 means until you close them.
 enum CornerSettings {
     static let choices: [(Int, String)] = [(0, "Until I close them"), (30, "30 seconds"), (60, "1 minute"), (300, "5 minutes")]
@@ -235,6 +250,7 @@ struct SettingsView: View {
     @State private var monitor: Any?
     @State private var saveDir = Store.savedDir
     @State private var hideAfter = CornerSettings.hideAfter
+    @State private var betaUpdates = BetaUpdates.enabled
     @State private var highlightClicks = RecordingSettings.highlightClicks
     @State private var showKeys = RecordingSettings.showKeystrokes
     @State private var axMissing = RecordingSettings.showKeystrokes && !AXIsProcessTrusted()
@@ -382,6 +398,12 @@ struct SettingsView: View {
                     .onChange(of: hideAfter) { _, v in CornerSettings.hideAfter = v }
             }
             Text("Screenshots taken while one is still showing stack into a pile. Drag the pile to send them all.")
+                .font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+            Divider()
+            Text("Updates").font(.headline)
+            Toggle("Get beta builds", isOn: $betaUpdates)
+                .onChange(of: betaUpdates) { _, v in BetaUpdates.enabled = v }
+            Text("Try new features before they ship. Check for Updates in the menu offers betas too. Turn it off and you move to the next regular release when it comes out.")
                 .font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
             Divider()
             Text("Save Folder").font(.headline)

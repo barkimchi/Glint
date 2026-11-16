@@ -1,6 +1,9 @@
 import re, sys
 
+# Optional: argv[4] build number (betas pass theirs, e.g. 12.3), argv[5] Sparkle channel (beta).
 tag, sigline, pubdate = sys.argv[1], sys.argv[2], sys.argv[3]
+build_override = sys.argv[4] if len(sys.argv) > 4 else None
+channel = sys.argv[5] if len(sys.argv) > 5 else None
 version = tag.lstrip('v')
 m = re.search(r'sparkle:edSignature="([^"]+)"\s+length="([^"]+)"', sigline)
 if not m:
@@ -9,13 +12,14 @@ sig, length = m.group(1), m.group(2)
 build = str(int(round(float(version.split('.')[-1])))) if False else None
 # build number: CFBundleVersion is bumped per release; read it from project.yml
 proj = open('project.yml').read()
-build = re.search(r'CFBundleVersion:\s*"([^"]+)"', proj).group(1)
+build = build_override or re.search(r'CFBundleVersion:\s*"([^"]+)"', proj).group(1)
+channel_line = f"      <sparkle:channel>{channel}</sparkle:channel>\n" if channel else ""
 item = f'''    <item>
       <title>Glint {version}</title>
       <link>https://github.com/barkimchi/glint-app/releases/tag/{tag}</link>
       <sparkle:version>{build}</sparkle:version>
       <sparkle:shortVersionString>{version}</sparkle:shortVersionString>
-      <sparkle:releaseNotesLink>https://github.com/barkimchi/glint-app/releases/tag/{tag}</sparkle:releaseNotesLink>
+{channel_line}      <sparkle:releaseNotesLink>https://github.com/barkimchi/glint-app/releases/tag/{tag}</sparkle:releaseNotesLink>
       <pubDate>{pubdate}</pubDate>
       <enclosure url="https://github.com/barkimchi/glint-app/releases/download/{tag}/Glint.zip"
                  sparkle:edSignature="{sig}"

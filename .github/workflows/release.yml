@@ -3,9 +3,11 @@ name: Release
 # Triggered by pushing a version tag (git tag vX.Y.Z && git push origin vX.Y.Z).
 # Builds Glint.zip on a macOS runner and publishes it as a GitHub Release,
 # which is what the npx installer downloads.
-# A tag with a hyphen (v0.2.2-beta.2) is a test build: signed and notarized the
-# same way, but published as a draft pre-release, with no appcast entry and no
-# installer pin, so nobody is offered it.
+# A tag with a hyphen (v0.2.3-beta.2) is a beta: signed and notarized the same
+# way, published as a pre-release, and added to the appcast on Sparkle's "beta"
+# channel, so only copies with "Get beta builds" on are offered it. The installer
+# pin is not touched. Betas get build number <last release build>.<N> (12.2), which
+# is above the last release and below the next one (13).
 on:
   push:
     tags:
@@ -29,9 +31,20 @@ jobs:
         run: xcodegen
       - name: Build
         run: xcodebuild -project Glint.xcodeproj -scheme Glint -configuration Release -derivedDataPath build build
-      - name: Label test build
+      - name: Label beta build
         if: ${{ contains(github.ref_name, '-') }}
-        run: /usr/libexec/PlistBuddy -c "Add :GlintBetaTag string ${{ github.ref_name }}" build/Build/Products/Release/Glint.app/Contents/Info.plist
+        run: |
+          set -euo pipefail
+          TAG="${{ github.ref_name }}"
+          N="${TAG##*.}"
+          [[ "$N" =~ ^[0-9]+$ ]] || { echo "::error::Beta tags must end in a number, like v0.2.3-beta.2"; exit 1; }
+          BASE=$(sed -n 's/.*CFBundleVersion: *"\([0-9]*\)".*/\1/p' project.yml)
+          PL=build/Build/Products/Release/Glint.app/Contents/Info.plist
+          /usr/libexec/PlistBuddy -c "Add :GlintBetaTag string $TAG" "$PL"
+          /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString ${TAG#v}" "$PL"
+          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $BASE.$N" "$PL"
+          echo "BETA_BUILD=$BASE.$N" >> "$GITHUB_ENV"
+          echo "Beta build $BASE.$N"
       - name: Set up signing keychain
         env:
           DEVID_P12_B64: ${{ secrets.DEVID_P12_B64 }}
@@ -138,14 +151,25 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: gh release create "${{ github.ref_name }}" build/Glint.zip --title "Glint ${{ github.ref_name }}" --generate-notes
-      - name: Publish test build (draft pre-release)
+      - name: Publish beta (pre-release)
         if: ${{ contains(github.ref_name, '-') }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release create "${{ github.ref_name }}" build/Glint.zip --draft --prerelease \
+          gh release create "${{ github.ref_name }}" build/Glint.zip --prerelease \
             --title "Glint ${{ github.ref_name }}" \
-            --notes "Test build, notarized. Not in the update feed or the installer."
+            --notes "Beta. Offered through Check for Updates when Settings > Updates > Get beta builds is on."
+      - name: Publish beta appcast entry
+        if: ${{ contains(github.ref_name, '-') }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git fetch origin master
+          git checkout -B appcast-publish origin/master
+          python3 .github/update_appcast.py "${{ github.ref_name }}" "$(cat sig.txt)" "$(date -u '+%a, %d %b %Y %H:%M:%S +0000')" "$BETA_BUILD" beta
+          git add appcast.xml
+          git commit -m "Beta appcast entry for ${{ github.ref_name }}"
+          git push origin HEAD:master
       - name: Publish appcast entry
         if: ${{ !contains(github.ref_name, '-') }}
         run: |

@@ -52,7 +52,7 @@ git tag v0.1.9 && git push origin v0.1.9
 
 The release workflow (`.github/workflows/release.yml`) builds on a macOS runner, signs with the Developer ID, has Apple notarize and staple it, signs the update for Sparkle, and publishes the zip. It then adds the appcast entry and pins the tag and checksum into `bin/RELEASE` and `bin/SHA256`, so the installer fetches exactly that release. `scripts/release.sh` does the build, sign and notarize steps locally.
 
-For a test build, push a tag with a hyphen (`v0.2.2-beta.2`). It is signed and notarized the same way but lands as a draft pre-release, with no appcast entry and no installer pin. Leave the version in `project.yml` alone so the real release is still offered as an update.
+For a beta, push a tag with a hyphen ending in a number (`v0.2.3-beta.3`). It is signed and notarized the same way, published as a pre-release, and added to the appcast on Sparkle's `beta` channel, so only copies with Settings > Updates > Get beta builds on are offered it (a beta build has it on by default). It gets build number `<last release build>.<N>`, so leave `project.yml` alone until the real release. The installer pin is not touched.
 
 ## Diagnostic log
 
