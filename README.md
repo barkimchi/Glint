@@ -80,26 +80,32 @@ Arrows, boxes, highlights, numbered steps, text, pixelate and crop. Every mark s
 
 <br>
 
-## 🪄 New in 0.2.2
+## 🪄 New in 0.2.3: the screenshot pile
 
 <table>
   <tr>
-    <td width="50%"><img src="docs/whats-new.png" alt="Glint's What's New card for 0.2.2: Keep a window on top, and trackpad edge controls" width="100%"></td>
-    <td width="50%">
-      <b>Keep a window on top.</b> Press ⌃⇧0 and click any window. It stays above everything, even other apps, until you unlock it from the menu bar.<br><br>
-      <b>Trackpad edges.</b> Slide one finger down the left edge for volume, the right edge for brightness. Hold a top corner to open the popup or capture. Turn it on in Settings.
+    <td width="34%" align="center"><img src="docs/pile-stacked.png" alt="Three screenshots stacked in the corner with a count badge, a Copy all button and the hint: click to see all, drag to send all" width="232"></td>
+    <td width="66%">
+      Take a few shots in a row and they <b>stack in the corner</b>, newest on top.<br><br>
+      <b>Drag the pile</b> into Claude, Slack or Finder and they all go. <b>Copy all</b> pastes every one.<br><br>
+      <b>Click it</b> to lay them out and drag or right-click just one.
     </td>
   </tr>
 </table>
+
+<img src="docs/pile-fanned.png" alt="The pile laid out: three screenshots side by side with Copy all and Stack buttons" width="100%">
 
 <br>
 
 ## 📌 And the small things
 
 **Quick access** · every shot waits in the corner: drag it anywhere, or hover for Copy, Annotate and Pin.<br>
+**Keep on top** · press ⌃⇧0 and click any window to lock it above everything, even other apps.<br>
+**Trackpad edges** · slide one finger down the left edge for volume, the right edge for brightness; hold a top corner to run an action.<br>
 **Pins** · float a screenshot above every window, fade it, or make it click-through.<br>
 **History** · 30 days of captures, one click from the menu bar.<br>
 **Welcome tour** · a quick guided start on first launch, and a What's New card after each update.<br>
+**Betas** · turn on Get beta builds in Settings and new features arrive through Check for Updates first.<br>
 **Private** · no account, no cloud. Everything stays on your Mac.
 
 <br>
@@ -122,7 +128,7 @@ Arrows, boxes, highlights, numbered steps, text, pixelate and crop. Every mark s
 
 Esc cancels any selection. Change any shortcut in Settings.
 
-<p align="center"><img src="docs/settings-window.png" alt="Glint Settings: shortcuts, the Go-to app, trackpad edge controls, recording options and save folder" width="360"></p>
+<p align="center"><img src="docs/settings-window.png" alt="Glint Settings: shortcuts, the Go-to app, trackpad edge controls, recording, corner thumbnails, beta updates and save folder" width="360"></p>
 </details>
 
 <details>

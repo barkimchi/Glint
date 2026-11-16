@@ -159,6 +159,11 @@ struct WhatsNew {
 
     /// Notes per version. Add an entry when a release has something worth showing; versions without one stay quiet.
     static let notes: [String: WhatsNew] = [
+        "0.2.3": WhatsNew(headline: "Shots pile up, send them together", features: [
+            Feature(title: "Screenshot pile", body: "Take a few shots in a row and they stack in the corner. Drag the pile into Claude or any app to send them all, or click it to pick one.", media: "sf:square.stack.3d.up.fill"),
+            Feature(title: "Copy all", body: "Hover the pile and hit Copy all to paste every shot at once.", media: "sf:doc.on.doc.fill"),
+            Feature(title: "Stays until you're done", body: "Corner thumbnails now wait until you close them. Prefer them to fade? Settings > Corner Thumbnails.", media: "sf:clock.fill"),
+        ]),
         "0.2.2": WhatsNew(headline: "Pin a window, swipe the edges", features: [
             Feature(title: "Keep a window on top", body: "Press Control-Shift-0 and click any window. It stays above everything until you unlock it from the menu bar.", media: "sf:pin.square.fill"),
             Feature(title: "Trackpad edge controls", body: "Slide one finger along the left edge for volume, the right edge for brightness. Hold a top corner to run an action. Turn it on in Glint Settings.", media: "sf:hand.point.up.left.fill"),

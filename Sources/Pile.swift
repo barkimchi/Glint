@@ -119,7 +119,7 @@ struct PileCollapsedView: View {
 
     private var overlay: some View {
         ZStack {
-            Color.black.opacity(state.controlsVisible ? 0.35 : 0).allowsHitTesting(false)
+            Color.black.opacity(state.controlsVisible ? 0.5 : 0).allowsHitTesting(false)
             VStack {
                 HStack(alignment: .top) {
                     Text("\(model.items.count)")
@@ -140,7 +140,9 @@ struct PileCollapsedView: View {
                 Spacer()
                 if state.controlsVisible {
                     Text("Click to see all · drag to send all")
-                        .font(.system(size: 10, weight: .medium)).foregroundStyle(.white.opacity(0.85))
+                        .font(.system(size: 10, weight: .medium)).foregroundStyle(.white)
+                        .padding(.horizontal, 8).padding(.vertical, 3)
+                        .background(.black.opacity(0.6), in: Capsule())
                         .allowsHitTesting(false)
                 }
                 Button {
@@ -149,7 +151,8 @@ struct PileCollapsedView: View {
                     Label("Copy all", systemImage: "doc.on.doc")
                         .font(.system(size: 11, weight: .semibold))
                         .padding(.horizontal, 10).padding(.vertical, 5)
-                        .background(.white.opacity(0.22), in: Capsule())
+                        .background(Color(white: 0.16).opacity(0.92), in: Capsule())
+                        .overlay(Capsule().stroke(.white.opacity(0.25), lineWidth: 1))
                         .foregroundStyle(.white)
                 }
                 .buttonStyle(.plain).padding(.bottom, 8)
@@ -353,7 +356,14 @@ enum PileTest {
                     s.draw(at: NSPoint(x: 300, y: 210), withAttributes: [.font: NSFont.boldSystemFont(ofSize: 72), .foregroundColor: NSColor.white])
                     return true
                 }
-                if let tiff = img.tiffRepresentation, let png = NSBitmapImageRep(data: tiff)?.representation(using: .png, properties: [:]) {
+                // -pile.source <png>: use crops of that image instead (the README's made-up dashboard).
+                let crops = [CGRect(x: 30, y: 220, width: 1140, height: 170), CGRect(x: 40, y: 395, width: 740, height: 365),
+                             CGRect(x: 785, y: 395, width: 380, height: 330)]
+                if let src = UserDefaults.standard.string(forKey: "pile.source"), let cg = Store.cgImage(URL(fileURLWithPath: src)),
+                   let part = cg.cropping(to: crops[i]),
+                   let png = NSBitmapImageRep(cgImage: part).representation(using: .png, properties: [:]) {
+                    try? png.write(to: u)
+                } else if let tiff = img.tiffRepresentation, let png = NSBitmapImageRep(data: tiff)?.representation(using: .png, properties: [:]) {
                     try? png.write(to: u)
                 }
                 urls.append(u)

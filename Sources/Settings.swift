@@ -223,7 +223,7 @@ enum SettingsWindow {
         let w = window ?? {
             // Taller than a laptop screen with every section, so it scrolls and fits the screen.
             let screenH = (NSScreen.main?.visibleFrame.height ?? 900) - 40
-            let w = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 460, height: min(1120, screenH)),
+            let w = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 460, height: min(1400, screenH)),
                              styleMask: [.titled, .closable, .resizable], backing: .buffered, defer: false)
             // Test builds carry their tag (added by the release workflow) so you can tell them apart.
             let beta = Bundle.main.object(forInfoDictionaryKey: "GlintBetaTag") as? String
@@ -233,7 +233,7 @@ enum SettingsWindow {
             host.sizingOptions = []
             w.contentView = host
             w.contentMinSize = NSSize(width: 460, height: 360)
-            w.contentMaxSize = NSSize(width: 460, height: 1120)
+            w.contentMaxSize = NSSize(width: 460, height: 1400)
             w.center()
             window = w
             return w
