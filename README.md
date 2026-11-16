@@ -128,7 +128,7 @@ Arrows, boxes, highlights, numbered steps, text, pixelate and crop. Every mark s
 
 Esc cancels any selection. Change any shortcut in Settings.
 
-<p align="center"><img src="docs/settings-window.png" alt="Glint Settings: shortcuts, the Go-to app, trackpad edge controls, recording, corner thumbnails, beta updates and save folder" width="360"></p>
+<p align="center"><img src="docs/settings-window.png" alt="Glint Settings in collapsible sections, Keyboard Shortcuts open; each closed section shows its current setting" width="360"></p>
 </details>
 
 <details>
