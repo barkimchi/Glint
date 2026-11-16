@@ -19,6 +19,7 @@ Pass these to `Glint.app/Contents/MacOS/Glint`. Tests and demos log to `/tmp/gli
 | `--selftest <dir>` | Runs capture, crop, every annotation tool, OCR, a short recording, GIF export and the stitching tests headlessly |
 | `--editor-selftest <png>` | Select, move, resize, recolour, delete, undo and redo on the editor model, plus a framed export |
 | `--ring-selftest` | Long press, drag, remove, add and Done on the popup with synthetic mouse events (never touches your saved layout) |
+| `--pile-test <dir>` | Takes three made-up screenshots in a row, renders the stacked and fanned-out pile into `<dir>`, clicks it, and logs what a drag and Copy all carry (Copy all goes to a private pasteboard) |
 | `--trackpad-selftest` | Feeds made-up touches through the trackpad edge gestures and logs what fired, plus whether a trackpad was found |
 | `--scrolltest x,y,w,h` | Runs a real auto-scrolling capture on a screen region |
 | `--pickertest <window title>` | Runs the real Keep on Top action through the picker and clicks that window |

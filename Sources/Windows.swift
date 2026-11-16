@@ -1,4 +1,5 @@
 import AppKit
+import Combine
 import SwiftUI
 
 // MARK: - Quick access thumbnail
@@ -60,7 +61,11 @@ enum QuickAccess {
     private static var panels: [(NSPanel, ThumbState)] = []
     private static let width: CGFloat = 220
 
+    // The screenshot pile: one panel that every new screenshot lands on while it's showing.
+    private static var pile: (panel: NSPanel, state: ThumbState, model: PileModel)?
+
     static func show(url: URL, isVideo: Bool) {
+        if !isVideo { addToPile(url); return }
         Task {
             let image = await Thumbs.make(url, size: 440) ?? NSImage(contentsOf: url) ?? NSImage()
             let aspect = image.size.width > 0 ? image.size.height / image.size.width : 0.6
@@ -98,6 +103,64 @@ enum QuickAccess {
     static func close(_ p: NSPanel) {
         p.orderOut(nil)
         panels.removeAll { $0.0 === p }
+        if pile?.panel === p { pile = nil }
+        layout()
+    }
+
+    /// Adds a screenshot to the pile, newest on top, or starts a pile.
+    static func addToPile(_ url: URL) {
+        Task {
+            let image = await Thumbs.make(url, size: 440) ?? NSImage(contentsOf: url) ?? NSImage()
+            let item = PileItem(url: url, image: image)
+            if let pile {
+                pile.model.items.append(item)
+                resizePile()
+                pile.state.armDismiss()
+                return
+            }
+            let model = PileModel(), state = ThumbState()
+            model.items = [item]
+            let p = NSPanel(contentRect: NSRect(origin: .zero, size: PileLayout.size(model, maxWidth: maxPileWidth)),
+                            styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
+            p.isOpaque = false
+            p.backgroundColor = .clear
+            p.hasShadow = true
+            p.level = .floating
+            p.hidesOnDeactivate = false
+            p.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+            let host = NSHostingView(rootView: PileRootView(model: model, state: state) { [weak p] in if let p { close(p) } })
+            host.sizingOptions = []
+            p.contentView = host
+            state.panel = p
+            pile = (p, state, model)
+            panels.insert((p, state), at: 0) // the pile sits at the bottom, recordings stack above it
+            pileObserver = model.objectWillChange.sink { DispatchQueue.main.async { resizePile() } }
+            layout()
+            p.orderFrontRegardless()
+            state.armDismiss()
+        }
+    }
+
+    static func removeFromPile(_ url: URL) {
+        guard let pile else { return }
+        pile.model.items.removeAll { $0.url == url }
+        if pile.model.items.isEmpty { close(pile.panel) } else { resizePile() }
+    }
+
+    /// Screenshots in the pile, oldest first (for tests).
+    static var pileURLs: [URL] { pile?.model.urls ?? [] }
+    static var pileExpanded: Bool { pile?.model.expanded ?? false }
+    static var pilePanel: NSPanel? { pile?.panel }
+    static var pileState: ThumbState? { pile?.state }
+
+    private static var pileObserver: Any?
+    private static var maxPileWidth: CGFloat { (NSScreen.main?.visibleFrame.width ?? 1200) - 32 }
+
+    private static func resizePile() {
+        guard let pile else { return }
+        let size = PileLayout.size(pile.model, maxWidth: maxPileWidth)
+        guard pile.panel.frame.size != size else { return }
+        pile.panel.setContentSize(size)
         layout()
     }
 
