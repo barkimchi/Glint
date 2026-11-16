@@ -28,6 +28,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if args.contains("--ring-selftest") { RingSelfTest.run() }
         if args.contains("--tour-capture-test") { TourCaptureTest.run() }
         if let i = args.firstIndex(of: "--toptest"), i + 1 < args.count { TopPinTest.run(args[i + 1]) }
+        if let i = args.firstIndex(of: "--pickertest"), i + 1 < args.count { TopPickerTest.run(args[i + 1]) }
         if let i = args.firstIndex(of: "--frame"), i + 3 < args.count { // --frame in.png out.png <preset>: README stills
             if let cg = Store.cgImage(URL(fileURLWithPath: args[i + 1])) {
                 let m = EditorModel(image: cg)
@@ -108,6 +109,7 @@ final class AppController: NSObject, NSMenuDelegate {
         hotkeys.unregisterAll()
         for a in HotkeyAction.allCases {
             guard let s = HotkeySettings.shared.shortcut(a) else { continue }
+            Diag.log("hotkey for \(a.rawValue): \(s.display)")
             hotkeys.register(Int(s.keyCode), Int(s.modifiers)) { [weak self] in self?.perform(a) }
         }
     }
@@ -115,6 +117,7 @@ final class AppController: NSObject, NSMenuDelegate {
     func unregisterHotkeys() { hotkeys.unregisterAll() }
 
     func perform(_ a: HotkeyAction) {
+        Diag.log("perform \(a.rawValue)")
         switch a {
         case .area: captureArea()
         case .window: captureWindow()
@@ -255,7 +258,8 @@ final class AppController: NSObject, NSMenuDelegate {
     }
 
     private func select(_ mode: CaptureMode) {
-        guard SelectionSession.active == nil, Permissions.ensure() else { return }
+        Diag.log("select \(mode) active=\(SelectionSession.active != nil) screenRecording=\(CGPreflightScreenCaptureAccess())")
+        guard SelectionSession.active == nil, Permissions.ensure() else { Diag.log("select \(mode) blocked"); return }
         Task {
             do {
                 let c = try await Capture.content()
@@ -265,14 +269,16 @@ final class AppController: NSObject, NSMenuDelegate {
                     frozen.append(Frozen(screen: s, display: d, image: try await Capture.snapshot(d, content: c)))
                 }
                 let wins = mode.picksWindow ? Capture.pickableWindows(c) : []
+                Diag.log("picker shown: \(frozen.count) displays, \(wins.count) windows")
                 SelectionSession.start(frozen: frozen, mode: mode, windows: wins) { [weak self] r in
                     self?.handle(r, mode: mode)
                 }
-            } catch { fail(error) }
+            } catch { Diag.log("select failed: \(error)"); fail(error) }
         }
     }
 
     private func handle(_ r: SelectionResult, mode: CaptureMode) {
+        Diag.log("selection result \(r) mode=\(mode)")
         switch r {
         case .cancel: return
         case .window(let w) where mode == .keepOnTop:
@@ -418,6 +424,22 @@ private final class BorderView: NSView {
 
 /// Global shortcuts via Carbon's RegisterEventHotKey: old API, still the standard way
 /// to get system-wide hotkeys without Accessibility permission.
+/// Plain-text trace of actions, for diagnosing "nothing happened" reports: ~/Library/Logs/Glint/glint.log.
+enum Diag {
+    private static let url: URL = {
+        let dir = URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent("Library/Logs/Glint")
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        return dir.appendingPathComponent("glint.log")
+    }()
+    /// Off unless turned on: defaults write com.barkimchi.glint debug.log -bool YES
+    static func log(_ s: String) {
+        guard UserDefaults.standard.bool(forKey: "debug.log") else { return }
+        let line = "\(ISO8601DateFormatter().string(from: Date())) \(s)\n"
+        if let h = try? FileHandle(forWritingTo: url) { h.seekToEndOfFile(); h.write(Data(line.utf8)); try? h.close() }
+        else { try? Data(line.utf8).write(to: url) }
+    }
+}
+
 final class HotkeyCenter {
     private var handlers: [UInt32: () -> Void] = [:]
     private var refs: [EventHotKeyRef?] = []
@@ -430,6 +452,7 @@ final class HotkeyCenter {
                               nil, MemoryLayout<EventHotKeyID>.size, nil, &hk)
             let me = Unmanaged<HotkeyCenter>.fromOpaque(ctx!).takeUnretainedValue()
             let id = hk.id
+            Diag.log("hotkey pressed id=\(id)")
             DispatchQueue.main.async { me.handlers[id]?() }
             return noErr
         }, 1, &spec, Unmanaged.passUnretained(self).toOpaque(), nil)
@@ -445,8 +468,9 @@ final class HotkeyCenter {
         let id = UInt32(handlers.count + 1)
         handlers[id] = action
         var ref: EventHotKeyRef?
-        RegisterEventHotKey(UInt32(keyCode), UInt32(modifiers), EventHotKeyID(signature: OSType(0x474C_4E54), id: id),
-                            GetApplicationEventTarget(), 0, &ref)
+        let st = RegisterEventHotKey(UInt32(keyCode), UInt32(modifiers), EventHotKeyID(signature: OSType(0x474C_4E54), id: id),
+                                     GetApplicationEventTarget(), 0, &ref)
+        Diag.log("register hotkey id=\(id) key=\(keyCode) mods=\(modifiers) status=\(st)")
         refs.append(ref)
     }
 }

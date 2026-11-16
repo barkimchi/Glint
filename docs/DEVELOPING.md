@@ -20,6 +20,7 @@ Pass these to `Glint.app/Contents/MacOS/Glint`. Tests and demos log to `/tmp/gli
 | `--editor-selftest <png>` | Select, move, resize, recolour, delete, undo and redo on the editor model, plus a framed export |
 | `--ring-selftest` | Long press, drag, remove, add and Done on the popup with synthetic mouse events (never touches your saved layout) |
 | `--scrolltest x,y,w,h` | Runs a real auto-scrolling capture on a screen region |
+| `--pickertest <window title>` | Runs the real Keep on Top action through the picker and clicks that window |
 | `--toptest <App or window title>` | Locks that window on top and logs frames, placement and visibility for 12 s (clicks the live view at 7 s) |
 | `--edit <png>` | Opens the editor on an image |
 | `--pin <png>` | Pins an image |
@@ -48,3 +49,7 @@ git tag v0.1.9 && git push origin v0.1.9
 ```
 
 The release workflow (`.github/workflows/release.yml`) builds on a macOS runner, signs with the Developer ID, has Apple notarize and staple it, signs the update for Sparkle, and publishes the zip. It then adds the appcast entry and pins the tag and checksum into `bin/RELEASE` and `bin/SHA256`, so the installer fetches exactly that release. `scripts/release.sh` does the build, sign and notarize steps locally.
+
+## Diagnostic log
+
+`defaults write com.barkimchi.glint debug.log -bool YES`, relaunch, and Glint writes each step (shortcuts registered and pressed, actions, picker shown or blocked, selections, Keep on Top locks) to `~/Library/Logs/Glint/glint.log`. Turn it off with `-bool NO`.

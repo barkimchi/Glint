@@ -11,6 +11,7 @@ enum TopPins {
     private(set) static var all: [TopPin] = []
 
     static func lock(_ w: SCWindow) {
+        Diag.log("keep on top: lock window \(w.windowID) \(w.owningApplication?.applicationName ?? "?")")
         guard !all.contains(where: { $0.windowID == w.windowID }) else { Toast.show("That window is already on top"); return }
         let pin = TopPin(w)
         all.append(pin)
@@ -61,7 +62,8 @@ final class TopPin: NSObject {
     }
 
     func start() {
-        guard let f = Self.currentFrame(windowID) else { return }
+        guard let f = Self.currentFrame(windowID) else { Diag.log("keep on top: no frame for window \(windowID)"); return }
+        Diag.log("keep on top: started at \(f)")
         place(f)
         panel.orderFrontRegardless()
         startStream()
@@ -306,6 +308,36 @@ enum TopPinTest {
             }
             TopPins.unlockAll()
             ScrollTest.log("toptest: done")
+        }
+    }
+}
+
+/// `--pickertest <window title>`: runs the real Keep on Top action (picker overlay), clicks that window
+/// with synthetic events, and logs each stage. Logs to /tmp/glint-scrolltest.log.
+@MainActor
+enum TopPickerTest {
+    static func run(_ title: String) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            ScrollTest.log("picker: screen recording =", CGPreflightScreenCaptureAccess(), "shortcut =", HotkeySettings.shared.shortcut(.keepOnTop)?.display ?? "none")
+            AppController.shared.perform(.keepOnTop)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                guard let ow = NSApp.windows.first(where: { $0 is OverlayWindow && $0.isVisible }),
+                      let sv = ow.contentView as? SelectionView else { ScrollTest.log("picker: no overlay appeared"); NSApp.terminate(nil); return }
+                ScrollTest.log("picker: overlay up, \(sv.windows.count) pickable windows")
+                guard let target = sv.windows.first(where: { $0.0.title == title }) else {
+                    ScrollTest.log("picker: target not in list:", sv.windows.prefix(6).map { $0.0.title ?? "?" }); NSApp.terminate(nil); return
+                }
+                let p = NSPoint(x: target.1.midX, y: target.1.midY)
+                func ev(_ t: NSEvent.EventType) -> NSEvent {
+                    NSEvent.mouseEvent(with: t, location: sv.convert(p, to: nil), modifierFlags: [], timestamp: ProcessInfo.processInfo.systemUptime,
+                                       windowNumber: ow.windowNumber, context: nil, eventNumber: 0, clickCount: 1, pressure: 1)!
+                }
+                sv.mouseMoved(with: ev(.mouseMoved)); sv.mouseDown(with: ev(.leftMouseDown)); sv.mouseUp(with: ev(.leftMouseUp))
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                    ScrollTest.log("picker: locked windows =", TopPins.all.map(\.name), "frames =", TopPinTest.frames)
+                    TopPins.unlockAll(); NSApp.terminate(nil)
+                }
+            }
         }
     }
 }
