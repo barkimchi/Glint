@@ -26,6 +26,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if args.contains("--settings") { SettingsWindow.show() }
         if args.contains("--ring-open") { ActionRing.show(); if let f = ActionRing.frame { ScrollTest.log("ring frame", Int(f.minX), Int(f.minY), Int(f.width), Int(f.height)) } } // for screenshots of the ring
         if args.contains("--ring-selftest") { RingSelfTest.run() }
+        if args.contains("--trackpad-selftest") { TrackpadControls.selfTest(); NSApp.terminate(nil); return }
         if args.contains("--tour-capture-test") { TourCaptureTest.run() }
         if let i = args.firstIndex(of: "--toptest"), i + 1 < args.count { TopPinTest.run(args[i + 1]) }
         if let i = args.firstIndex(of: "--pickertest"), i + 1 < args.count { TopPickerTest.run(args[i + 1]) }
@@ -84,6 +85,7 @@ final class AppController: NSObject, NSMenuDelegate {
         registerHotkeys()
         EdgeWidget.restore()
         MiddleClick.start()
+        TrackpadControls.apply()
 
         Store.prune()
         // New users get the welcome tour (it handles the permission); updaters get What's New.

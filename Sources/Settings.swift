@@ -224,6 +224,13 @@ struct SettingsView: View {
     @State private var microphone = RecordingSettings.microphone
     @State private var micDenied = AVCaptureDevice.authorizationStatus(for: .audio) == .denied
     @State private var appName = AppTarget.name
+    @State private var tpOn = TrackpadSettings.enabled
+    @State private var tpLeft = TrackpadSettings.leftEdge
+    @State private var tpRight = TrackpadSettings.rightEdge
+    @State private var tpTL = TrackpadSettings.topLeft
+    @State private var tpTR = TrackpadSettings.topRight
+    @State private var tpSens = TrackpadSettings.sensitivity
+    @State private var tpZone = TrackpadSettings.zone
     @State private var appIcon = AppTarget.icon
 
     var body: some View {
@@ -259,6 +266,45 @@ struct SettingsView: View {
                 Button("Choose App…") { chooseApp() }
                 if appName != "Claude" { Button("Use Claude") { setApp(AppTarget.claudeID) } }
             }
+            Divider()
+            Text("Trackpad").font(.headline)
+            Toggle("Trackpad edge controls", isOn: $tpOn)
+                .onChange(of: tpOn) { _, v in TrackpadSettings.enabled = v; TrackpadControls.apply() }
+            Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 8) {
+                GridRow {
+                    Text("Slide left edge").frame(width: 150, alignment: .leading)
+                    Picker("", selection: $tpLeft) { ForEach(EdgeControl.allCases) { Text($0.title).tag($0) } }.labelsHidden().frame(width: 200)
+                        .onChange(of: tpLeft) { _, v in TrackpadSettings.leftEdge = v }
+                }
+                GridRow {
+                    Text("Slide right edge")
+                    Picker("", selection: $tpRight) { ForEach(EdgeControl.allCases) { Text($0.title).tag($0) } }.labelsHidden().frame(width: 200)
+                        .onChange(of: tpRight) { _, v in TrackpadSettings.rightEdge = v }
+                }
+                GridRow {
+                    Text("Hold top-left corner")
+                    Picker("", selection: $tpTL) { ForEach(TrackpadSettings.cornerChoices, id: \.0) { Text($0.1).tag($0.0) } }.labelsHidden().frame(width: 200)
+                        .onChange(of: tpTL) { _, v in TrackpadSettings.topLeft = v }
+                }
+                GridRow {
+                    Text("Hold top-right corner")
+                    Picker("", selection: $tpTR) { ForEach(TrackpadSettings.cornerChoices, id: \.0) { Text($0.1).tag($0.0) } }.labelsHidden().frame(width: 200)
+                        .onChange(of: tpTR) { _, v in TrackpadSettings.topRight = v }
+                }
+                GridRow {
+                    Text("Sensitivity")
+                    Slider(value: $tpSens, in: 0.6...2.5).frame(width: 200)
+                        .onChange(of: tpSens) { _, v in TrackpadSettings.sensitivity = v }
+                }
+                GridRow {
+                    Text("Edge zone width")
+                    Slider(value: $tpZone, in: 0.05...0.16).frame(width: 200)
+                        .onChange(of: tpZone) { _, v in TrackpadSettings.zone = v; TrackpadControls.apply() }
+                }
+            }
+            .disabled(!tpOn)
+            Text("Slide one finger along an edge to change volume or brightness; the pointer holds still while you slide. Hold a finger still in a top corner for half a second to run its action. Pauses while you type. Brightness works on built-in and Apple displays.")
+                .font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
             Divider()
             Text("Recording").font(.headline)
             Toggle("Highlight clicks (yellow ring, blue for right-click)", isOn: $highlightClicks)
