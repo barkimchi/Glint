@@ -113,5 +113,17 @@
                  length="1926156"
                  type="application/octet-stream" />
     </item>
+    <item>
+      <title>Glint 0.2.2</title>
+      <link>https://github.com/barkimchi/glint-app/releases/tag/v0.2.2</link>
+      <sparkle:version>12</sparkle:version>
+      <sparkle:shortVersionString>0.2.2</sparkle:shortVersionString>
+      <sparkle:releaseNotesLink>https://github.com/barkimchi/glint-app/releases/tag/v0.2.2</sparkle:releaseNotesLink>
+      <pubDate>Mon, 16 Nov 2026 15:59:54 +0000</pubDate>
+      <enclosure url="https://github.com/barkimchi/glint-app/releases/download/v0.2.2/Glint.zip"
+                 sparkle:edSignature="S168GP9SORSca+EY1nVScAiLACdT0S1kSIukw5i31g8oExISUyV7cFTZKBHuKPUifGUCzWwBsLY9wnKQjj5ICw=="
+                 length="1993866"
+                 type="application/octet-stream" />
+    </item>
   </channel>
 </rss>
