@@ -186,7 +186,20 @@ enum ActionRing {
         p.level = .popUpMenu
         p.hidesOnDeactivate = false
         p.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
-        p.contentView = RingView(frame: NSRect(origin: .zero, size: size))
+        let ring = RingView(frame: NSRect(origin: .zero, size: size))
+        if GlintLook.isGlass {
+            // A frosted plate behind the tiles (not under the name tag row above or the Done row below).
+            let host = NSView(frame: ring.frame)
+            let blur = Glass.view(radius: 18)
+            blur.frame = NSRect(x: 0, y: tipSpace - 10, width: size.width, height: size.height - 2 * tipSpace + 20)
+            blur.autoresizingMask = [.width, .height]
+            host.addSubview(blur)
+            ring.autoresizingMask = [.width, .height]
+            host.addSubview(ring)
+            p.contentView = host
+        } else {
+            p.contentView = ring
+        }
         p.alphaValue = 0
         p.orderFrontRegardless()
         NSAnimationContext.runAnimationGroup { $0.duration = 0.12; p.animator().alphaValue = 1 }
@@ -208,7 +221,7 @@ enum ActionRing {
     }
 
     static func close() {
-        (panel?.contentView as? RingView)?.endEditing(save: true)
+        view?.endEditing(save: true)
         panel?.orderOut(nil); panel = nil
         if let o = outside { NSEvent.removeMonitor(o); outside = nil }
     }
@@ -216,11 +229,14 @@ enum ActionRing {
     /// Opens the popup straight into edit mode (used by --ring-edit for screenshots).
     static func showEditing() {
         show()
-        (panel?.contentView as? RingView)?.beginEditingFromOutside()
+        view?.beginEditingFromOutside()
     }
 
     static var frame: NSRect? { panel?.frame }
-    static var view: RingView? { panel?.contentView as? RingView }
+    static var view: RingView? {
+        guard let c = panel?.contentView else { return nil }
+        return c as? RingView ?? c.subviews.compactMap { $0 as? RingView }.first
+    }
 
     static func fire(_ item: RingItem) {
         close()
@@ -313,7 +329,7 @@ final class RingView: NSView {
         let l = CALayer()
         l.bounds = CGRect(x: 0, y: 0, width: ActionRing.tile, height: ActionRing.tile)
         l.cornerRadius = 13
-        l.backgroundColor = EdgeGlyph.paper.withAlphaComponent(0.9).cgColor
+        l.backgroundColor = (GlintLook.isGlass ? Glass.tile : EdgeGlyph.paper.withAlphaComponent(0.9)).cgColor
         l.contents = a.image
         l.contentsGravity = .center
         l.contentsScale = window?.backingScaleFactor ?? NSScreen.main?.backingScaleFactor ?? 2
@@ -360,7 +376,8 @@ final class RingView: NSView {
         CATransaction.begin(); CATransaction.setDisableActions(true)
         for (i, l) in tiles.enumerated() {
             let lit = !editing && i == hot
-            l.backgroundColor = (lit ? NSColor(white: 0.42, alpha: 0.96) : EdgeGlyph.paper.withAlphaComponent(0.9)).cgColor
+            l.backgroundColor = GlintLook.isGlass ? (lit ? Glass.tileLit : Glass.tile).cgColor
+                : (lit ? NSColor(white: 0.42, alpha: 0.96) : EdgeGlyph.paper.withAlphaComponent(0.9)).cgColor
             l.sublayers?.first { $0.name == "badge" }?.isHidden = !editing
         }
         CATransaction.commit()

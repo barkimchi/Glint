@@ -272,6 +272,7 @@ struct SettingsView: View {
     @State private var saveDir = Store.savedDir
     @State private var hideAfter = CornerSettings.hideAfter
     @State private var betaUpdates = BetaUpdates.enabled
+    @State private var look = GlintLook.current
     @State private var highlightClicks = RecordingSettings.highlightClicks
     @State private var showKeys = RecordingSettings.showKeystrokes
     @State private var axMissing = RecordingSettings.showKeystrokes && !AXIsProcessTrusted()
@@ -319,6 +320,13 @@ struct SettingsView: View {
                     Button("Restore Default Shortcuts") { stopRecording(); settings.resetAll(); message = "Defaults restored." }
                     Spacer()
                 }
+            }
+            section("look", "Appearance", "paintpalette", look.title) {
+                Picker("", selection: $look) { ForEach(GlintLook.allCases) { Text($0.title).tag($0) } }
+                    .pickerStyle(.segmented).labelsHidden().frame(width: 200)
+                    .onChange(of: look) { _, v in GlintLook.current = v; EdgeWidget.reload() }
+                Text("Glass blurs what's behind the popup, the edge widget and the screenshot pile.")
+                    .font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
             }
             section("goto", "Go-to App", "arrow.up.forward.app", appName) {
                 HStack(spacing: 8) {

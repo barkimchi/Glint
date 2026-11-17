@@ -94,8 +94,7 @@ struct PileCollapsedView: View {
             // Cards behind, offset up and to the right.
             ForEach(Array((0..<peeks).reversed()), id: \.self) { i in
                 let off = CGFloat(i + 1) * PileLayout.peek
-                RoundedRectangle(cornerRadius: 10)
-                    .fill(Color(white: 0.22 - Double(i) * 0.04))
+                LookBackground(radius: 10, dark: Color(white: 0.22 - Double(i) * 0.04))
                     .overlay(RoundedRectangle(cornerRadius: 10).stroke(.white.opacity(0.18), lineWidth: 1))
                     .frame(width: PileLayout.width, height: h)
                     .offset(x: off, y: -off)
@@ -191,7 +190,7 @@ struct PileExpandedView: View {
             }
         }
         .padding(12)
-        .background(RoundedRectangle(cornerRadius: 14).fill(Color(white: 0.11).opacity(0.96)))
+        .background(LookBackground(radius: 14, dark: Color(white: 0.11).opacity(0.96)))
         .overlay(RoundedRectangle(cornerRadius: 14).stroke(.white.opacity(0.18), lineWidth: 1))
         .onHover { state.hovering = $0 }
     }

@@ -103,7 +103,8 @@ enum EdgeWidget {
 }
 
 final class EdgeWidgetView: NSView {
-    var expanded = false { didSet { needsLayout = true; needsDisplay = true } }
+    var expanded = false { didSet { needsLayout = true; needsDisplay = true; blur?.isHidden = !expanded } }
+    private var blur: NSVisualEffectView?
     private var buttons: [NSButton] = []
     private var dragging = false
     private var moved = false
@@ -112,6 +113,13 @@ final class EdgeWidgetView: NSView {
 
     init() {
         super.init(frame: .zero)
+        if GlintLook.isGlass {
+            let v = Glass.view(radius: 12)
+            v.autoresizingMask = [.width, .height]
+            v.isHidden = true
+            addSubview(v)
+            blur = v
+        }
         for (i, a) in HotkeyAction.allCases.enumerated() {
             let b = NSButton(image: EdgeGlyph.image(a), target: self, action: #selector(fire(_:)))
             b.setAccessibilityLabel(a.title)
@@ -135,6 +143,7 @@ final class EdgeWidgetView: NSView {
 
     override func layout() {
         super.layout()
+        blur?.frame = bounds
         let c = EdgeWidget.cell, g = EdgeWidget.grip, t = EdgeWidget.thickness.expanded
         for (i, b) in buttons.enumerated() {
             b.isHidden = !expanded
@@ -157,8 +166,12 @@ final class EdgeWidgetView: NSView {
             return
         }
         let plate = NSBezierPath(roundedRect: bounds.insetBy(dx: 0.5, dy: 0.5), xRadius: 12, yRadius: 12)
-        EdgeGlyph.paper.setFill(); plate.fill()
-        EdgeGlyph.ink.withAlphaComponent(0.18).setStroke(); plate.lineWidth = 1; plate.stroke()
+        if GlintLook.isGlass {
+            Glass.border.setStroke(); plate.lineWidth = 1; plate.stroke() // the blur view behind fills it
+        } else {
+            EdgeGlyph.paper.setFill(); plate.fill()
+            EdgeGlyph.ink.withAlphaComponent(0.18).setStroke(); plate.lineWidth = 1; plate.stroke()
+        }
         // Grip dots
         EdgeGlyph.ink.withAlphaComponent(0.4).setFill()
         for i in 0..<3 {
