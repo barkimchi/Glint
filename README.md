@@ -100,7 +100,8 @@ Arrows, boxes, highlights, numbered steps, text, pixelate and crop. Every mark s
 ## 📌 And the small things
 
 **Quick access** · every shot waits in the corner: drag it anywhere, or hover for Copy, Annotate and Pin.<br>
-**Keep on top** · press ⌃⇧0 and click any window to lock it above everything, even other apps.<br>
+**Keep on top** · press ⌥⇧0 and click any window to lock it above everything, even other apps.<br>
+**Emoji picker** · ⌥⇧1 (or the popup) opens the emoji picker at the text box you're typing in, in any app.<br>
 **Trackpad edges** · slide one finger down the left edge for volume, the right edge for brightness; hold a top corner to run an action.<br>
 **Pins** · float a screenshot above every window, fade it, or make it click-through.<br>
 **History** · 30 days of captures, one click from the menu bar.<br>
@@ -116,15 +117,16 @@ Arrows, boxes, highlights, numbered steps, text, pixelate and crop. Every mark s
 
 | Shortcut | Action |
 |---|---|
-| ⌃⇧4 | Capture area |
-| ⌃⇧5 | Capture window |
-| ⌃⇧3 | Capture fullscreen |
-| ⌃⇧7 | Scrolling capture |
-| ⌃⇧8 | Capture full page |
-| ⌃⇧2 | Grab text |
-| ⌃⇧6 | Start or stop a recording |
-| ⌃⇧9 | Go to Claude (or the app you pick) |
-| ⌃⇧0 | Keep a window on top |
+| ⌥⇧4 | Capture area |
+| ⌥⇧5 | Capture window |
+| ⌥⇧3 | Capture fullscreen |
+| ⌥⇧7 | Scrolling capture |
+| ⌥⇧8 | Capture full page |
+| ⌥⇧2 | Grab text |
+| ⌥⇧6 | Start or stop a recording |
+| ⌥⇧9 | Go to Claude (or the app you pick) |
+| ⌥⇧0 | Keep a window on top |
+| ⌥⇧1 | Emoji picker, right where you're typing |
 
 Esc cancels any selection. Change any shortcut in Settings.
 
