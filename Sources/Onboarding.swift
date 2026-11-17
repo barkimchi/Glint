@@ -165,7 +165,7 @@ struct WhatsNew {
             Feature(title: "Stays until you're done", body: "Corner thumbnails now wait until you close them. Prefer them to fade? Settings > Corner Thumbnails.", media: "sf:clock.fill"),
         ]),
         "0.2.2": WhatsNew(headline: "Pin a window, swipe the edges", features: [
-            Feature(title: "Keep a window on top", body: "Press Control-Shift-0 and click any window. It stays above everything until you unlock it from the menu bar.", media: "sf:pin.square.fill"),
+            Feature(title: "Keep a window on top", body: "Press Option-Shift-0 and click any window. It stays above everything until you unlock it from the menu bar.", media: "sf:pin.square.fill"),
             Feature(title: "Trackpad edge controls", body: "Slide one finger along the left edge for volume, the right edge for brightness. Hold a top corner to run an action. Turn it on in Glint Settings.", media: "sf:hand.point.up.left.fill"),
         ]),
         "0.2.0": WhatsNew(headline: "Edit marks, then make it pretty", features: [

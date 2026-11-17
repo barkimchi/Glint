@@ -116,6 +116,33 @@ enum RingLayout {
     }
     @MainActor static var hiddenActions: [HotkeyAction] { HotkeyAction.allCases.filter { !items.contains(.action($0)) } }
 
+    /// Actions added in later versions join a popup the user already customized, once.
+    /// Removing one afterwards sticks, because the flag stays set.
+    static let laterActions: [HotkeyAction] = [.emoji]
+
+    /// Pure version for the test: the saved order (nil = never customized) and the flags already set,
+    /// in; the new order and the flags to set, out.
+    static func migrate(order: [String]?, flags: Set<String>) -> (order: [String]?, setFlags: [String]) {
+        var order = order, set: [String] = []
+        for a in laterActions {
+            let flag = "ring.added.\(a.rawValue)"
+            guard !flags.contains(flag) else { continue }
+            set.append(flag)
+            let key = RingItem.action(a).key
+            if var o = order, !o.contains(key) { o.append(key); order = o }
+        }
+        return (order, set)
+    }
+
+    @MainActor static func addNewActionsOnce() {
+        let d = UserDefaults.standard
+        let saved = d.stringArray(forKey: "ring.order")
+        let flags = Set(laterActions.map { "ring.added.\($0.rawValue)" }.filter { d.bool(forKey: $0) })
+        let r = migrate(order: saved, flags: flags)
+        r.setFlags.forEach { d.set(true, forKey: $0) }
+        if let o = r.order, o != saved ?? [] { d.set(o, forKey: "ring.order") }
+    }
+
     /// An even number of buttons sits in two even rows; otherwise rows of four.
     static func columns(for count: Int) -> Int {
         if count >= 2, count % 2 == 0 { return count / 2 }

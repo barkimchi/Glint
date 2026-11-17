@@ -254,6 +254,16 @@ enum EdgeGlyph {
                 NSBezierPath(ovalIn: NSRect(x: 20.5, y: 20.5, width: 8, height: 8)).fill()
                 let stem = NSBezierPath(); stem.lineWidth = 2.4; stem.lineCapStyle = .round
                 stem.move(to: NSPoint(x: 24.5, y: 21)); stem.line(to: NSPoint(x: 24.5, y: 16)); red.setStroke(); stem.stroke()
+            case .emoji: // a happy face: white outline, amber eyes and an open grin
+                let face = NSBezierPath(ovalIn: NSRect(x: 8.5, y: 8.5, width: 19, height: 19))
+                face.lineWidth = 2.6; face.stroke()
+                red.setFill()
+                NSBezierPath(ovalIn: NSRect(x: 13.4, y: 18.4, width: 2.6, height: 3.8)).fill()
+                NSBezierPath(ovalIn: NSRect(x: 20.0, y: 18.4, width: 2.6, height: 3.8)).fill()
+                let grin = NSBezierPath()
+                grin.move(to: NSPoint(x: 12.6, y: 15.6))
+                grin.appendArc(withCenter: NSPoint(x: 18, y: 15.6), radius: 5.4, startAngle: 180, endAngle: 360)
+                grin.close(); grin.fill()
             case .window:
                 outline(NSRect(x: 9.5, y: 10.5, width: 17, height: 15), 2.5)
                 red.setFill(); chip(NSRect(x: 12.5, y: 20.5, width: 11, height: 3), 1.5)

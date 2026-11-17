@@ -25,7 +25,7 @@ enum AppTarget {
 }
 
 enum HotkeyAction: String, CaseIterable, Identifiable, Codable {
-    case area, window, fullscreen, scroll, page, ocr, record, claude, keepOnTop
+    case area, window, fullscreen, scroll, page, ocr, record, claude, keepOnTop, emoji
     var id: String { rawValue }
     var title: String {
         switch self {
@@ -38,6 +38,7 @@ enum HotkeyAction: String, CaseIterable, Identifiable, Codable {
         case .ocr: return "Grab Text (OCR)"
         case .record: return "Record Screen"
         case .claude: return "Go to \(AppTarget.name)"
+        case .emoji: return "Emoji Picker"
         }
     }
     var symbol: String {
@@ -51,10 +52,11 @@ enum HotkeyAction: String, CaseIterable, Identifiable, Codable {
         case .ocr: return "text.viewfinder"
         case .record: return "record.circle"
         case .claude: return "bubble.left"
+        case .emoji: return "face.smiling"
         }
     }
     var defaultShortcut: Shortcut {
-        let cs = UInt32(controlKey | shiftKey)
+        let cs = UInt32(optionKey | shiftKey) // Option-Shift-number for everything
         switch self {
         case .area: return Shortcut(keyCode: UInt32(kVK_ANSI_4), modifiers: cs, key: "4")
         case .window: return Shortcut(keyCode: UInt32(kVK_ANSI_5), modifiers: cs, key: "5")
@@ -65,6 +67,7 @@ enum HotkeyAction: String, CaseIterable, Identifiable, Codable {
         case .ocr: return Shortcut(keyCode: UInt32(kVK_ANSI_2), modifiers: cs, key: "2")
         case .record: return Shortcut(keyCode: UInt32(kVK_ANSI_6), modifiers: cs, key: "6")
         case .claude: return Shortcut(keyCode: UInt32(kVK_ANSI_9), modifiers: cs, key: "9")
+        case .emoji: return Shortcut(keyCode: UInt32(kVK_ANSI_1), modifiers: cs, key: "1")
         }
     }
 }

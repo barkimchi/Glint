@@ -27,6 +27,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if args.contains("--ring-open") { ActionRing.show(); if let f = ActionRing.frame { ScrollTest.log("ring frame", Int(f.minX), Int(f.minY), Int(f.width), Int(f.height)) } } // for screenshots of the ring
         if args.contains("--ring-selftest") { RingSelfTest.run() }
         if let i = args.firstIndex(of: "--pile-test"), i + 1 < args.count { PileTest.run(URL(fileURLWithPath: args[i + 1])); return }
+        if args.contains("--emoji-selftest") { EmojiSelfTest.run(); return }
         if args.contains("--trackpad-selftest") { TrackpadControls.selfTest(); NSApp.terminate(nil); return }
         if args.contains("--tour-capture-test") { TourCaptureTest.run() }
         if let i = args.firstIndex(of: "--toptest"), i + 1 < args.count { TopPinTest.run(args[i + 1]) }
@@ -87,6 +88,7 @@ final class AppController: NSObject, NSMenuDelegate {
         EdgeWidget.restore()
         MiddleClick.start()
         TrackpadControls.apply()
+        if !CommandLine.arguments.contains(where: { $0.hasPrefix("--") }) { RingLayout.addNewActionsOnce() } // tests never touch the saved popup
 
         Store.prune()
         // New users get the welcome tour (it handles the permission); updaters get What's New.
@@ -131,6 +133,7 @@ final class AppController: NSObject, NSMenuDelegate {
         case .record: toggleRecording()
         case .claude: goToClaude()
         case .keepOnTop: keepWindowOnTop()
+        case .emoji: EmojiPicker.open()
         }
     }
 
