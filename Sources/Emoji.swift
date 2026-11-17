@@ -7,12 +7,7 @@ import ApplicationServices
 @MainActor
 enum EmojiPicker {
     static func open() {
-        guard AXIsProcessTrusted() else {
-            let opts = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true] as CFDictionary
-            _ = AXIsProcessTrustedWithOptions(opts)
-            Toast.show("Emoji Picker needs Accessibility access for Glint")
-            return
-        }
+        guard Access.ensure("Emoji Picker") else { return }
         // Let the popup close and focus settle back on the text box, and wait for the shortcut's own
         // keys (Option, Shift) to come up so they don't mix with the keystroke sent.
         waitForModifiersUp(deadline: Date().addingTimeInterval(1.2)) { send() }

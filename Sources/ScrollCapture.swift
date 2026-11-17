@@ -166,9 +166,7 @@ final class ScrollSession {
     func start() {
         if pageMode {
             // Full-page capture scrolls for you, and macOS only lets apps post scroll events with Accessibility access.
-            let opts = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true] as CFDictionary
-            guard AXIsProcessTrustedWithOptions(opts) else {
-                Toast.show("Full-page capture needs Accessibility access for Glint. Turn it on, then try again.")
+            guard Access.ensure("Full-page capture") else {
                 onDone(nil)
                 return
             }
@@ -275,11 +273,7 @@ final class ScrollSession {
     // Auto-scroll posts real scroll-wheel events, which macOS only allows with Accessibility access.
     @objc private func toggleAuto() {
         if !autoScroll {
-            let opts = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true] as CFDictionary
-            guard AXIsProcessTrustedWithOptions(opts) else {
-                Toast.show("Auto-scroll needs Accessibility access for Glint. Scroll by hand meanwhile.")
-                return
-            }
+            guard Access.ensure("Auto-scroll") else { return }   // scrolling by hand still works meanwhile
             let primaryH = NSScreen.screens.first?.frame.height ?? 0
             let g = rect.offsetBy(dx: frozen.screen.frame.minX, dy: frozen.screen.frame.minY)
             CGWarpMouseCursorPosition(CGPoint(x: g.midX, y: primaryH - g.midY))

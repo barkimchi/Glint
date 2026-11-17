@@ -393,18 +393,13 @@ struct SettingsView: View {
                 Toggle("Show keystrokes", isOn: $showKeys)
                     .onChange(of: showKeys) { _, v in
                         RecordingSettings.showKeystrokes = v
-                        if v {
-                            let opts = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true] as CFDictionary
-                            axMissing = !AXIsProcessTrustedWithOptions(opts)
-                        } else { axMissing = false }
+                        axMissing = v && !Access.ensure("Show keystrokes")
                     }
                 if axMissing {
                     HStack {
                         Text("Needs Accessibility access for Glint. Keys won't show until it's on.")
                             .font(.callout).foregroundStyle(.secondary)
-                        Button("Open") {
-                            NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")!)
-                        }.controlSize(.small)
+                        Button("Fix…") { Access.explain("Show keystrokes") }.controlSize(.small)
                     }
                 }
                 Toggle("Record system audio (sound from apps)", isOn: $systemAudio)

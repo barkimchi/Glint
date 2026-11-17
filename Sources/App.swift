@@ -189,6 +189,9 @@ final class AppController: NSObject, NSMenuDelegate {
         if !CGPreflightScreenCaptureAccess() {
             menu.addItem(item("Grant Screen Recording Access…", nil, #selector(askPermission)))
         }
+        if !Access.trusted {
+            menu.addItem(item("Fix Accessibility Access…", nil, #selector(fixAccess)))
+        }
         menu.addItem(item("Welcome Tour…", nil, #selector(openTour)))
         menu.addItem(item("What's New…", nil, #selector(openWhatsNew)))
         let updates = NSMenuItem(title: "Check for Updates…", action: #selector(SPUStandardUpdaterController.checkForUpdates(_:)), keyEquivalent: "")
@@ -233,6 +236,7 @@ final class AppController: NSObject, NSMenuDelegate {
     }
     @objc func capturePage() { if ScrollSession.active == nil { select(.page) } }
     @objc func toggleRing() { MiddleClick.enabled.toggle() }
+    @objc func fixAccess() { Access.explain() }
     @objc func toggleEdgeWidget() { EdgeWidget.enabled = !EdgeWidget.isVisible }
     @objc func captureScrolling() { if ScrollSession.active == nil { select(.scroll) } }
     @objc func toggleRecording() { recorder != nil ? stopRecording() : select(.record) }
