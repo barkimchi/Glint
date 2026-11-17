@@ -101,6 +101,7 @@ Arrows, boxes, highlights, numbered steps, text, pixelate and crop. Every mark s
 
 **Quick access** · every shot waits in the corner: drag it anywhere, or hover for Copy, Annotate and Pin.<br>
 **Keep on top** · press ⌥⇧0 and click any window to lock it above everything, even other apps.<br>
+**Glass look** · switch Glint's popup, edge widget and screenshot pile to frosted glass in Settings > Appearance.<br>
 **Emoji picker** · ⌥⇧1 (or the popup) opens the emoji picker at the text box you're typing in, in any app.<br>
 **Trackpad edges** · slide one finger down the left edge for volume, the right edge for brightness; hold a top corner to run an action.<br>
 **Pins** · float a screenshot above every window, fade it, or make it click-through.<br>
