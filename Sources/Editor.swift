@@ -746,8 +746,9 @@ enum EditorWindow {
         guard let cg = Store.cgImage(url) else { return }
         let model = EditorModel(image: cg)
         lastModel = model
-        let scale = NSScreen.main?.backingScaleFactor ?? 2
-        let vf = NSScreen.main?.visibleFrame ?? NSRect(x: 0, y: 0, width: 1440, height: 900)
+        let screen = Front.pointerScreen
+        let scale = screen?.backingScaleFactor ?? 2
+        let vf = screen?.visibleFrame ?? NSRect(x: 0, y: 0, width: 1440, height: 900)
         let w = min(max(CGFloat(cg.width) / scale + 40, 860), vf.width * 0.85)
         let h = min(max(CGFloat(cg.height) / scale + 100, 420), vf.height * 0.85)
         let win = NSWindow(contentRect: NSRect(x: 0, y: 0, width: w, height: h),
@@ -756,12 +757,10 @@ enum EditorWindow {
         win.isReleasedWhenClosed = false
         win.contentView = NSHostingView(rootView: EditorView(m: model) { [weak win] in win?.close() })
         win.contentMinSize = NSSize(width: 860, height: 360)
-        win.center()
         open.append(win)
         NotificationCenter.default.addObserver(forName: NSWindow.willCloseNotification, object: win, queue: .main) { n in
             MainActor.assumeIsolated { open.removeAll { $0 === n.object as AnyObject } }
         }
-        win.makeKeyAndOrderFront(nil)
-        NSApp.activate()
+        Front.show(win, center: true)
     }
 }

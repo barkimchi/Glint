@@ -416,18 +416,17 @@ enum HistoryWindow {
     private static var window: NSWindow?
 
     static func show() {
+        let isNew = window == nil
         let w = window ?? {
             let w = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 820, height: 560),
                              styleMask: [.titled, .closable, .resizable, .miniaturizable], backing: .buffered, defer: false)
             w.title = "Glint History"
             w.isReleasedWhenClosed = false
-            w.center()
             window = w
             return w
         }()
         w.contentView = NSHostingView(rootView: HistoryView())
-        w.makeKeyAndOrderFront(nil)
-        NSApp.activate()
+        Front.show(w, center: isNew)
     }
 }
 

@@ -252,6 +252,7 @@ enum ActionRing {
         op.directoryURL = URL(fileURLWithPath: "/Applications")
         op.prompt = "Add"
         op.message = "Pick an app to add to the popup."
+        Front.raise(op)
         guard op.runModal() == .OK, let u = op.url, let id = Bundle(url: u)?.bundleIdentifier else { return }
         var items = RingLayout.items
         if !items.contains(.app(id)) { items.append(.app(id)) }

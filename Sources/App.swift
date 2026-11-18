@@ -315,9 +315,10 @@ final class AppController: NSObject, NSMenuDelegate {
                     if let img { self?.deliver(img) }
                 }.start()
             case .ocr:
-                guard let img = Capture.crop(f, rect) else { return }
+                guard let img = Capture.crop(f, rect) else { Diag.log("ocr: crop failed for \(rect)"); return }
                 Task {
                     let text = await OCR.recognize(img)
+                    Diag.log("ocr: \(img.width)x\(img.height) -> \(text.split(separator: "\n").count) lines")
                     if text.isEmpty { Toast.show("No text found"); return }
                     NSPasteboard.general.clearContents()
                     NSPasteboard.general.setString(text, forType: .string)
@@ -498,7 +499,7 @@ enum Permissions {
         a.informativeText = "Turn on Glint in System Settings > Privacy & Security > Screen & System Audio Recording. macOS may ask you to quit and reopen Glint afterwards."
         a.addButton(withTitle: "Open System Settings")
         a.addButton(withTitle: "Later")
-        NSApp.activate()
+        Front.raise(a.window)
         if a.runModal() == .alertFirstButtonReturn,
            let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture") {
             NSWorkspace.shared.open(url)
@@ -520,7 +521,8 @@ enum Toast {
         label.textColor = .white
         label.sizeToFit()
         let size = NSSize(width: label.frame.width + 32, height: 36)
-        guard let screen = NSScreen.main else { return }
+        // On the screen you're working on (NSScreen.main follows the focused window, often another display).
+        guard let screen = Front.pointerScreen else { return }
         let origin = NSPoint(x: screen.visibleFrame.midX - size.width / 2, y: screen.visibleFrame.maxY - size.height - 24)
         let p = NSPanel(contentRect: NSRect(origin: origin, size: size), styleMask: [.borderless, .nonactivatingPanel],
                         backing: .buffered, defer: false)

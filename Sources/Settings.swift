@@ -223,6 +223,7 @@ enum SettingsWindow {
     private static var window: NSWindow?
 
     static func show() {
+        let isNew = window == nil
         let w = window ?? {
             // Sized to the open sections by fit(contentHeight:); scrolls when that's taller than the screen.
             let w = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 460, height: 420),
@@ -236,12 +237,10 @@ enum SettingsWindow {
             w.contentView = host
             w.contentMinSize = NSSize(width: 460, height: 200)
             w.contentMaxSize = NSSize(width: 460, height: 2000)
-            w.center()
             window = w
             return w
         }()
-        w.makeKeyAndOrderFront(nil)
-        NSApp.activate()
+        Front.show(w, center: isNew)
     }
 
     /// Grows or shrinks the window to the open sections, keeping its top edge where it is.

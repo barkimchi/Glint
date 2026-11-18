@@ -44,8 +44,7 @@ enum Access {
         a.addButton(withTitle: "Reset and Ask Again")
         a.addButton(withTitle: "Open System Settings")
         a.addButton(withTitle: "Cancel")
-        NSApp.activate(ignoringOtherApps: true)
-        a.window.level = .floating
+        Front.raise(a.window)
         switch a.runModal() {
         case .alertFirstButtonReturn: reset(feature)
         case .alertSecondButtonReturn: openSettings(); waitForGrant(feature)
