@@ -280,6 +280,7 @@ struct SettingsView: View {
     @State private var micDenied = AVCaptureDevice.authorizationStatus(for: .audio) == .denied
     @State private var appName = AppTarget.name
     @State private var tpOn = TrackpadSettings.enabled
+    @State private var threeFinger = MiddleClick.threeFinger
     @State private var tpLeft = TrackpadSettings.leftEdge
     @State private var tpRight = TrackpadSettings.rightEdge
     @State private var tpTL = TrackpadSettings.topLeft
@@ -339,7 +340,17 @@ struct SettingsView: View {
                 Text("The Go-to button in the popup and its shortcut bring this app forward.")
                     .font(.callout).foregroundStyle(.secondary)
             }
-            section("trackpad", "Trackpad", "hand.point.up.left", tpOn ? "On" : "Off") {
+            section("trackpad", "Trackpad", "hand.point.up.left", trackpadSummary) {
+                Toggle("Three-finger click opens the popup", isOn: $threeFinger)
+                    .onChange(of: threeFinger) { _, v in MiddleClick.threeFinger = v }
+                if threeFinger && MiddleClick.threeFingerDragOn {
+                    Label("Off while Three Finger Drag is on (System Settings > Accessibility > Pointer Control > Trackpad Options).", systemImage: "exclamationmark.triangle")
+                        .font(.callout).foregroundStyle(.orange).fixedSize(horizontal: false, vertical: true)
+                } else {
+                    Text("Press the trackpad down with three fingers, like a middle click on a mouse. The click doesn't reach the app underneath.")
+                        .font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                }
+                Divider().padding(.vertical, 2)
                 Toggle("Trackpad edge controls", isOn: $tpOn)
                     .onChange(of: tpOn) { _, v in TrackpadSettings.enabled = v; TrackpadControls.apply(); tpStatus = TrackpadControls.status }
                 if tpOn {
@@ -464,6 +475,15 @@ struct SettingsView: View {
         .background(GeometryReader { g in Color.clear.preference(key: SettingsHeightKey.self, value: g.size.height) })
         .onPreferenceChange(SettingsHeightKey.self) { h in MainActor.assumeIsolated { SettingsWindow.fit(contentHeight: h) } }
         .onDisappear { stopRecording() }
+    }
+
+    private var trackpadSummary: String {
+        switch (threeFinger, tpOn) {
+        case (true, true): return "Three-finger click, edges"
+        case (true, false): return "Three-finger click"
+        case (false, true): return "Edges"
+        case (false, false): return "Off"
+        }
     }
 
     private var recordingSummary: String {

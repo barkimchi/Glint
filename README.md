@@ -140,8 +140,9 @@ Esc cancels any selection. Change any shortcut in Settings.
 
 - **Install**: unzip, drag `Glint.app` to Applications, open it. Releases are signed and notarized by Apple.
 - **Updates**: Glint checks on its own and verifies each update before installing. The menu has Check for Updates too.
-- **Permissions**: Screen Recording for everything. Accessibility for full-page and scrolling capture, keystrokes and the middle-click popup. Microphone only if you turn it on. Trackpad edges need nothing extra.
+- **Permissions**: Screen Recording for everything. Accessibility for full-page and scrolling capture, keystrokes and the middle-click and three-finger-click popup. Microphone only if you turn it on. Trackpad edges need nothing extra.
 - **Middle click**: while the popup is on, Glint takes the middle button system-wide. Turn it off from the menu bar.
+- **Three-finger click**: pressing the trackpad down with three fingers opens the popup too. Turn it off in Settings > Trackpad. It stays off while macOS's Three Finger Drag is on.
 - **Files**: screenshots save to Desktop/Glint Screenshots by default. History lives in `~/Library/Application Support/Glint/History`.
 </details>
 

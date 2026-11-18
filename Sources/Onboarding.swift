@@ -159,6 +159,10 @@ struct WhatsNew {
 
     /// Notes per version. Add an entry when a release has something worth showing; versions without one stay quiet.
     static let notes: [String: WhatsNew] = [
+        "0.2.8": WhatsNew(headline: "Three fingers open the popup", features: [
+            Feature(title: "Three-finger click", body: "Press the trackpad down with three fingers to open the popup, like a middle click on a mouse. Turn it off in Settings > Trackpad.", media: "sf:hand.tap.fill"),
+            Feature(title: "Windows open on top", body: "Annotate, Settings and History now open in front of the app you're in, on the screen with your pointer.", media: "sf:macwindow.on.rectangle"),
+        ]),
         "0.2.3": WhatsNew(headline: "Shots pile up, send them together", features: [
             Feature(title: "Screenshot pile", body: "Take a few shots in a row and they stack in the corner. Drag the pile into Claude or any app to send them all, or click it to pick one.", media: "sf:square.stack.3d.up.fill"),
             Feature(title: "Copy all", body: "Hover the pile and hit Copy all to paste every shot at once.", media: "sf:doc.on.doc.fill"),

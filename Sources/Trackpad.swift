@@ -2,6 +2,7 @@ import AppKit
 import CoreAudio
 import Darwin
 import ObjectiveC
+import os
 
 // Trackpad edge controls. Raw touches come from Apple's private MultitouchSupport framework,
 // loaded at runtime so Glint keeps working (with this feature off) if a macOS update changes it.
@@ -62,7 +63,14 @@ struct Touch {
     let time: Double
     enum Phase { case began, moved, ended }
     var aspect: Float { minor > 0.001 ? max(major, minor) / max(0.001, min(major, minor)) : 1 }
+    /// A large or long contact: a palm or the side of a hand, not a fingertip.
+    var isPalm: Bool { size > 2.2 || (size > 1.3 && aspect > 1.8) }
 }
+
+/// Fingers on each trackpad right now. Written on MultitouchSupport's thread and read by the popup's click tap,
+/// which can't wait for the main thread.
+private struct TouchState { var fingers: [Int32: Int] = [:]; var forwardFrames = false }
+private let touchState = OSAllocatedUnfairLock(initialState: TouchState())
 
 /// Memory layout of one contact as MultitouchSupport delivers it.
 private struct MTContact {
@@ -77,17 +85,42 @@ private struct MTContact {
 private typealias MTCallback = @convention(c) (Int32, UnsafeMutableRawPointer?, Int32, Double, Int32) -> Int32
 
 /// Reads raw contact frames from every full-size trackpad (built-in or Magic Trackpad).
+/// Two features use it: the edge controls (every frame) and the three-finger click (just the finger count).
 @MainActor
 enum MultitouchReader {
+    enum Client { case edges, clicks }
+    private static var clients: Set<Client> = []
     private static var devices: [UnsafeMutableRawPointer] = []
     private static var unregister: (@convention(c) (UnsafeMutableRawPointer, MTCallback) -> Void)?
     private static var stopDevice: (@convention(c) (UnsafeMutableRawPointer) -> Void)?
-    static var onFrame: (([Touch]) -> Void)?
+    /// Every frame, on the main thread. Frames only cross to the main thread while this is set.
+    static var onFrame: (([Touch]) -> Void)? {
+        didSet { let on = onFrame != nil; touchState.withLock { $0.forwardFrames = on } }
+    }
     private(set) static var deviceCount = 0
 
-    /// Returns false when the framework or a trackpad isn't available.
+    /// Starts reading for one feature. Returns false when the framework or a trackpad isn't available.
     @discardableResult
-    static func start() -> Bool {
+    static func start(for client: Client) -> Bool {
+        clients.insert(client)
+        return startDevices()
+    }
+
+    /// Stops reading for one feature; the trackpads stop once no feature needs them.
+    static func stop(for client: Client) {
+        clients.remove(client)
+        if clients.isEmpty { stopDevices() }
+    }
+
+    /// Fingers resting on the trackpad that has the most on it (palms don't count). Safe from any thread.
+    nonisolated static var fingers: Int { touchState.withLock { $0.fingers.values.max() ?? 0 } }
+
+    /// Fingertips touching in one frame: lifting fingers and palms don't count.
+    nonisolated static func fingers(in touches: [Touch]) -> Int {
+        touches.filter { $0.phase != .ended && !$0.isPalm }.count
+    }
+
+    private static func startDevices() -> Bool {
         guard devices.isEmpty else { return true }
         guard let h = dlopen("/System/Library/PrivateFrameworks/MultitouchSupport.framework/MultitouchSupport", RTLD_LAZY),
               let createList = dlsym(h, "MTDeviceCreateList"),
@@ -117,9 +150,10 @@ enum MultitouchReader {
         return !devices.isEmpty
     }
 
-    static func stop() {
+    private static func stopDevices() {
         for d in devices { unregister?(d, contactCallback); stopDevice?(d) }
         devices.removeAll(); deviceCount = 0
+        touchState.withLock { $0.fingers.removeAll() }
     }
 
     fileprivate static func deliver(_ touches: [Touch]) { onFrame?(touches) }
@@ -136,6 +170,9 @@ private func contactCallback(_ device: Int32, _ data: UnsafeMutableRawPointer?, 
             touches.append(Touch(id: t.identifier, x: t.posX, y: t.posY, size: t.size, major: t.majorAxis, minor: t.minorAxis, phase: phase, time: time))
         }
     }
+    let count = MultitouchReader.fingers(in: touches)
+    let forward = touchState.withLock { s -> Bool in s.fingers[device] = count; return s.forwardFrames }
+    guard forward else { return 0 }
     let snapshot = touches
     DispatchQueue.main.async { MainActor.assumeIsolated { MultitouchReader.deliver(snapshot) } }
     return 0
@@ -164,8 +201,6 @@ final class EdgeGestures {
     private var track: (id: Int32, edge: Edge?, corner: Corner?, startX: Float, startY: Float, startTime: Double, sliding: Bool, fired: Bool)?
     private var ignored: Set<Int32> = []
 
-    private func isPalm(_ t: Touch) -> Bool { t.size > 2.2 || (t.size > 1.3 && t.aspect > 1.8) }
-
     func handle(_ touches: [Touch]) {
         // Only single-finger gestures; two or more fingers belong to macOS (scrolling, swipes).
         if touches.count != 1 {
@@ -183,14 +218,14 @@ final class EdgeGestures {
         }
         guard let s = track, s.id == t.id else {
             // A new finger: it only counts if it lands in an edge zone or corner, and isn't a palm or typing.
-            if isPalm(t) || t.time - lastKeyTime < typingPause { ignored.insert(t.id); return }
+            if t.isPalm || t.time - lastKeyTime < typingPause { ignored.insert(t.id); return }
             let corner: Corner? = t.y > 1 - cornerSize ? (t.x < cornerSize ? .topLeft : (t.x > 1 - cornerSize ? .topRight : nil)) : nil
             let edge: Edge? = t.x < zone ? .left : (t.x > 1 - zone ? .right : nil)
             if corner == nil && edge == nil { ignored.insert(t.id); return }
             track = (t.id, edge, corner, t.x, t.y, t.time, false, false)
             return
         }
-        if isPalm(t) { if s.sliding, let e = s.edge { onSlideEnded?(e) }; track = nil; ignored.insert(t.id); return }
+        if t.isPalm { if s.sliding, let e = s.edge { onSlideEnded?(e) }; track = nil; ignored.insert(t.id); return }
         let dx = t.x - s.startX, dy = t.y - s.startY
         if s.sliding, let e = s.edge {
             // Keep sliding while the finger stays near its edge.
@@ -340,12 +375,12 @@ enum TrackpadControls {
                 MainActor.assumeIsolated { gestures.lastKeyTime = ProcessInfo.processInfo.systemUptime }
             }
         }
-        if !MultitouchReader.start() { Toast.show("No trackpad found for trackpad controls") }
+        if !MultitouchReader.start(for: .edges) { Toast.show("No trackpad found for trackpad controls") }
     }
 
     static func stop() {
-        MultitouchReader.stop()
         MultitouchReader.onFrame = nil
+        MultitouchReader.stop(for: .edges)
         CGAssociateMouseAndMouseCursorPosition(1)
         if let k = keyMonitor { NSEvent.removeMonitor(k); keyMonitor = nil }
     }
@@ -419,7 +454,17 @@ enum TrackpadControls {
         }
         g.handle([])
         ScrollTest.log("trackpad-selftest two fingers: \(log.isEmpty ? "nothing" : log.joined(separator: ", "))")
-        ScrollTest.log("trackpad-selftest devices: started=\(MultitouchReader.start()) count=\(MultitouchReader.deviceCount) volume=\(SystemVolume.value) brightness=\(DisplayBrightness.value.map { String($0) } ?? "unavailable")")
-        MultitouchReader.stop()
+        // Three-finger click counts fingertips only: a resting palm or a finger already lifting doesn't count.
+        let tip = { (id: Int32, p: Touch.Phase) in Touch(id: id, x: 0.3 + Float(id) * 0.1, y: 0.4, size: 0.8, major: 8, minor: 7, phase: p, time: 0) }
+        let palm = Touch(id: 9, x: 0.8, y: 0.1, size: 2.6, major: 20, minor: 9, phase: .moved, time: 0)
+        let counts = [
+            ("three fingers", [tip(1, .moved), tip(2, .moved), tip(3, .moved)]),
+            ("three fingers and a palm", [tip(1, .moved), tip(2, .moved), tip(3, .moved), palm]),
+            ("two fingers, one lifting", [tip(1, .moved), tip(2, .moved), tip(3, .ended)]),
+            ("four fingers", [tip(1, .moved), tip(2, .moved), tip(3, .moved), tip(4, .began)]),
+        ].map { "\($0.0)=\(MultitouchReader.fingers(in: $0.1))" }
+        ScrollTest.log("trackpad-selftest finger count: \(counts.joined(separator: ", "))")
+        ScrollTest.log("trackpad-selftest devices: started=\(MultitouchReader.start(for: .edges)) count=\(MultitouchReader.deviceCount) volume=\(SystemVolume.value) brightness=\(DisplayBrightness.value.map { String($0) } ?? "unavailable")")
+        MultitouchReader.stop(for: .edges)
     }
 }

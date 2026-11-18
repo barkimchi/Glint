@@ -1,7 +1,7 @@
 import AppKit
 import ApplicationServices
 
-/// Accessibility access (Emoji Picker, auto-scroll, full-page capture, keystrokes, swallowing middle clicks).
+/// Accessibility access (Emoji Picker, auto-scroll, full-page capture, keystrokes, swallowing middle and three-finger clicks).
 ///
 /// macOS's own prompt shows at most once per launch. If Glint is still not trusted after that, it's almost always a
 /// stale entry: System Settings shows Glint switched on, but the switch belongs to an older copy of Glint that was

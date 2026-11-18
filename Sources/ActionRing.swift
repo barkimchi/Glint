@@ -2,55 +2,140 @@ import AppKit
 import ApplicationServices
 import UniformTypeIdentifiers
 
-/// Middle mouse button opens a ring of the capture actions at the pointer.
-/// With Accessibility access the click is swallowed (so it does not also close a browser tab);
-/// without it we can only listen, and the click still reaches the app underneath.
+/// The middle mouse button, or a click with three fingers on the trackpad, opens a ring of the capture actions at
+/// the pointer. With Accessibility access the click is swallowed (so it does not also close a browser tab, or click
+/// whatever is under the pointer); without it we can only listen, and the click still reaches the app underneath.
 @MainActor
 enum MiddleClick {
     private static var tap: CFMachPort?
-    private static var monitor: Any?
+    /// The tap runs on its own thread: with the three-finger click on it sees every left click on the Mac, and those
+    /// must never wait for Glint's main thread (a long capture or render would make clicks lag everywhere).
+    private static var tapLoop: CFRunLoop?
+    private static var monitors: [Any] = []
+    /// The three-finger press we swallowed, so its drags and release are swallowed too. Only touched on the tap's thread.
+    nonisolated(unsafe) private static var swallowingLeft = false
 
     static var enabled: Bool {
         get { UserDefaults.standard.object(forKey: "ring.enabled") as? Bool ?? true }
-        set { UserDefaults.standard.set(newValue, forKey: "ring.enabled"); newValue ? start(prompt: true) : stop() }
+        set { UserDefaults.standard.set(newValue, forKey: "ring.enabled"); start(prompt: newValue) }
+    }
+
+    /// A physical click (a press, not a tap) with three fingers on the trackpad opens the popup too.
+    static var threeFinger: Bool {
+        get { UserDefaults.standard.object(forKey: "ring.threeFinger") as? Bool ?? true }
+        set { UserDefaults.standard.set(newValue, forKey: "ring.threeFinger"); start(prompt: newValue) }
+    }
+
+    /// macOS's Three Finger Drag turns three moving fingers into a held click, so the three-finger click stays off
+    /// while it's on rather than eating every drag.
+    static var threeFingerDragOn: Bool {
+        ["com.apple.AppleMultitouchTrackpad", "com.apple.driver.AppleBluetoothMultitouch.trackpad"].contains {
+            (CFPreferencesCopyAppValue("TrackpadThreeFingerDrag" as CFString, $0 as CFString) as? Bool) == true
+        }
     }
 
     static func start(prompt: Bool = false) {
         stop()
-        guard enabled else { return }
+        let middle = enabled
+        let three = threeFinger && !threeFingerDragOn && MultitouchReader.start(for: .clicks)
+        if threeFinger && !three { MultitouchReader.stop(for: .clicks) }
+        defer { Diag.log("popup: middle=\(middle) threeFinger=\(threeFinger) drag=\(threeFingerDragOn) trackpads=\(MultitouchReader.deviceCount) tap=\(tap != nil)") }
+        guard middle || three else { return }
         let opts = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: prompt] as CFDictionary
         if AXIsProcessTrustedWithOptions(opts) {
-            let mask = CGEventMask(1 << CGEventType.otherMouseDown.rawValue | 1 << CGEventType.otherMouseUp.rawValue)
+            var mask: CGEventMask = 0
+            if middle { mask |= 1 << CGEventType.otherMouseDown.rawValue | 1 << CGEventType.otherMouseUp.rawValue }
+            if three {
+                mask |= 1 << CGEventType.leftMouseDown.rawValue | 1 << CGEventType.leftMouseDragged.rawValue
+                    | 1 << CGEventType.leftMouseUp.rawValue
+            }
             let cb: CGEventTapCallBack = { _, type, event, _ in
-                if type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {
+                let pass = Unmanaged.passUnretained(event)
+                switch type {
+                case .tapDisabledByTimeout, .tapDisabledByUserInput:
                     DispatchQueue.main.async { MainActor.assumeIsolated { MiddleClick.reenable() } }
-                    return Unmanaged.passUnretained(event)
+                    return pass
+                case .otherMouseDown, .otherMouseUp:
+                    guard event.getIntegerValueField(.mouseEventButtonNumber) == 2 else { return pass }
+                    if type == .otherMouseDown {
+                        DispatchQueue.main.async { MainActor.assumeIsolated { ActionRing.toggle() } }
+                    }
+                    return nil // swallow both the press and the release
+                case .leftMouseDown:
+                    guard MiddleClick.isThreeFingerPress() else { return pass }
+                    MiddleClick.swallowingLeft = true
+                    // A double click with three fingers opens the popup once, not open-then-close.
+                    if event.getIntegerValueField(.mouseEventClickState) <= 1 {
+                        DispatchQueue.main.async { MainActor.assumeIsolated { MiddleClick.threeFingerClicked() } }
+                    }
+                    return nil
+                case .leftMouseDragged:
+                    return MiddleClick.swallowingLeft ? nil : pass
+                case .leftMouseUp:
+                    guard MiddleClick.swallowingLeft else { return pass }
+                    MiddleClick.swallowingLeft = false
+                    return nil
+                default:
+                    return pass
                 }
-                guard event.getIntegerValueField(.mouseEventButtonNumber) == 2 else { return Unmanaged.passUnretained(event) }
-                if type == .otherMouseDown {
-                    DispatchQueue.main.async { MainActor.assumeIsolated { ActionRing.toggle() } }
-                }
-                return nil // swallow both the press and the release
             }
             if let t = CGEvent.tapCreate(tap: .cgSessionEventTap, place: .headInsertEventTap, options: .defaultTap,
-                                         eventsOfInterest: mask, callback: cb, userInfo: nil) {
-                CFRunLoopAddSource(CFRunLoopGetMain(), CFMachPortCreateRunLoopSource(nil, t, 0), .commonModes)
+                                         eventsOfInterest: mask, callback: cb, userInfo: nil),
+               let source = CFMachPortCreateRunLoopSource(nil, t, 0) {
+                tapLoop = TapThread.run(source)
                 CGEvent.tapEnable(tap: t, enable: true)
                 tap = t
                 return
             }
         }
-        monitor = NSEvent.addGlobalMonitorForEvents(matching: .otherMouseDown) { e in
+        if middle, let m = NSEvent.addGlobalMonitorForEvents(matching: .otherMouseDown, handler: { e in
             if e.buttonNumber == 2 { MainActor.assumeIsolated { ActionRing.toggle() } }
-        }
+        }) { monitors.append(m) }
+        if three, let m = NSEvent.addGlobalMonitorForEvents(matching: .leftMouseDown, handler: { e in
+            if e.clickCount <= 1, MultitouchReader.fingers == 3 { MainActor.assumeIsolated { MiddleClick.threeFingerClicked() } }
+        }) { monitors.append(m) }
     }
 
     static func stop() {
         if let t = tap { CGEvent.tapEnable(tap: t, enable: false); CFMachPortInvalidate(t); tap = nil }
-        if let m = monitor { NSEvent.removeMonitor(m); monitor = nil }
+        if let l = tapLoop { CFRunLoopStop(l); tapLoop = nil }
+        monitors.forEach { NSEvent.removeMonitor($0) }
+        monitors.removeAll()
+        swallowingLeft = false
+        MultitouchReader.stop(for: .clicks)
+    }
+
+    /// Exactly three fingertips on the trackpad. Called on the tap's thread.
+    nonisolated private static func isThreeFingerPress() -> Bool { MultitouchReader.fingers == 3 }
+
+    private static func threeFingerClicked() {
+        Diag.log("popup: three-finger click")
+        ActionRing.toggle()
     }
 
     private static func reenable() { if let t = tap { CGEvent.tapEnable(tap: t, enable: true) } }
+}
+
+/// A thread that does nothing but run one event tap's run loop.
+private enum TapThread {
+    private final class Box: @unchecked Sendable { var loop: CFRunLoop? }
+
+    /// Starts the thread, adds the tap's source to its run loop, and returns that run loop once it's running.
+    static func run(_ source: CFRunLoopSource) -> CFRunLoop? {
+        let box = Box(), ready = DispatchSemaphore(value: 0)
+        nonisolated(unsafe) let src = source
+        let t = Thread {
+            box.loop = CFRunLoopGetCurrent()
+            CFRunLoopAddSource(box.loop, src, .commonModes)
+            ready.signal()
+            CFRunLoopRun()
+        }
+        t.name = "Glint popup clicks"
+        t.qualityOfService = .userInteractive
+        t.start()
+        ready.wait()
+        return box.loop
+    }
 }
 
 /// One popup button: a built-in action, or an app to open.
