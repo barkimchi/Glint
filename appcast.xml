@@ -237,5 +237,17 @@
                  length="2161830"
                  type="application/octet-stream" />
     </item>
+    <item>
+      <title>Glint 0.2.8</title>
+      <link>https://github.com/barkimchi/glint-app/releases/tag/v0.2.8</link>
+      <sparkle:version>18</sparkle:version>
+      <sparkle:shortVersionString>0.2.8</sparkle:shortVersionString>
+      <sparkle:releaseNotesLink>https://github.com/barkimchi/glint-app/releases/tag/v0.2.8</sparkle:releaseNotesLink>
+      <pubDate>Thu, 19 Nov 2026 22:30:20 +0000</pubDate>
+      <enclosure url="https://github.com/barkimchi/glint-app/releases/download/v0.2.8/Glint.zip"
+                 sparkle:edSignature="zpjzN29GvNXTaIe1nZOJlICjsVK+fFF8ZYk+P/6KpNjadrfw35BGT/2ccCr1E8/evqN79nGZIwEie7pAk83nBg=="
+                 length="2161799"
+                 type="application/octet-stream" />
+    </item>
   </channel>
 </rss>
